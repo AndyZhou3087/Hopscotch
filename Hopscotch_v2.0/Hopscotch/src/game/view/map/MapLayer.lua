@@ -1027,12 +1027,9 @@ function MapLayer:onEnterFrame(dt)
     end
     
     --火箭道具第一种类型
---    if (GameController.isInState(PLAYER_STATE.Rocket) and self.m_player:getRocketState()==1) or GameController.isInState(PLAYER_STATE.StartRocket) then
---        if self.curRoomType ~= MAPROOM_TYPE.Running then
-            --直接判定摄像头的移动
-            self:CoreLogic()
---        end
---    end
+    if not (GameController.isInState(PLAYER_STATE.Rocket) and self.m_player:getRocketState()~=1) then
+        self:CoreLogic()
+    end
     
     if self.rocket then
         local cameraPos = cc.p(self.m_camera:getPosition())
