@@ -17,6 +17,10 @@ function MapView:ctor(parameters)
     Image_2:setPositionY(display.top-34)
     local Image_2_0 = cc.uiloader:seekNodeByName(self.m_mapView,"Image_2_0")
     Image_2_0:setPositionY(display.top-84)
+    self.Image_10 = cc.uiloader:seekNodeByName(self.m_mapView,"Image_10")
+    self.Image_10:setPositionY(display.bottom+106)
+    
+    self:fingerAct()
 
     self.DiamondCount = cc.uiloader:seekNodeByName(self.m_mapView,"DiamondCount")
     self.DiamondCount:setString(GameDataManager.getDiamond())
@@ -26,6 +30,7 @@ function MapView:ctor(parameters)
     
     self.Score = cc.uiloader:seekNodeByName(self.m_mapView,"Score")
     self.Score:setPositionY(display.top-144)
+--    self.Score:setPositionY(display.top-65)
     self.Score:setString(1)
     
     self.PauseBtn = cc.uiloader:seekNodeByName(self.m_mapView,"PauseBtn")
@@ -40,11 +45,62 @@ function MapView:ctor(parameters)
     end)
     self.PauseBtn:onButtonClicked(function (event)
         GameDispatcher:dispatch(EventNames.EVENT_OPEN_PAUSE)
+        --测试
+--        GameDispatcher:dispatch(EventNames.EVENT_ROLE_REVIVE)
+    end)
+    
+    self.shop = cc.uiloader:seekNodeByName(self.m_mapView,"Button_left")
+    self.shop2 = cc.uiloader:seekNodeByName(self.m_mapView,"shop")
+    self.shop2:setButtonEnabled(false)
+    self.rocket = cc.uiloader:seekNodeByName(self.m_mapView,"Button_right")
+    self.rocket2 = cc.uiloader:seekNodeByName(self.m_mapView,"rocketBtn")
+    self.rocket2:setButtonEnabled(false)
+
+    --购物车按钮
+    self.shop:onButtonPressed(function(_event)    --按下
+        self.shop2:setButtonImage("disabled","main/Main_shop_2.png")
+    end)
+    self.shop:onButtonRelease(function(_event)    --触摸离开
+        self.shop2:setButtonImage("disabled","main/Main_shop_1.png")
+    end)
+    self.shop:onButtonClicked(function (event)
+        GameDispatcher:dispatch(EventNames.EVENT_OPEN_SHOP)
+    end)
+
+    --火箭按钮
+    self.rocket:onButtonPressed(function(_event)    --按下
+        self.rocket2:setButtonImage("disabled","rocket/Rocket_2.png")
+    end)
+    self.rocket:onButtonRelease(function(_event)    --触摸离开
+        self.rocket2:setButtonImage("disabled","rocket/Rocket_1.png")
+    end)
+    self.rocket:onButtonClicked(function (event)
+        Tools.printDebug("--------brj 打开开局冲刺界面")
+        if not self.openClick then
+        	self.openClick = true
+            self:openRocketView()
+        end
+    end)
+    
+    --设置按钮
+    self.icon_set = cc.uiloader:seekNodeByName(self.m_mapView,"icon_set")
+    self.icon_set:setButtonEnabled(false)
+    self.Button_set = cc.uiloader:seekNodeByName(self.m_mapView,"Button_set")
+    self.Button_set:setButtonEnabled(false)
+    self.Button_set:onButtonPressed(function(_event)    --按下
+        self.icon_set:setButtonImage("disabled","settlement/setIcon_1.png")
+    end)
+    self.Button_set:onButtonRelease(function(_event)    --触摸离开
+        self.icon_set:setButtonImage("disabled","settlement/setIcon_2.png")
+    end)
+    self.Button_set:onButtonClicked(function (event)
+        GameDispatcher:dispatch(EventNames.EVENT_OPEN_SET,{animation = true})
     end)
     
     
     self.proBg = cc.uiloader:seekNodeByName(self.m_mapView,"Image_9")
     self.proBg:setPositionY(display.top-56)
+--    self.proBg:setVisible(false)
     --进度条
     local fill = display.newSprite("ui/Time_process.png")
     self.process = display.newProgressTimer(fill, display.PROGRESS_TIMER_BAR):addTo(self.proBg)
@@ -53,6 +109,14 @@ function MapView:ctor(parameters)
     self.process:setPosition(self.proBg:getContentSize().width/2, self.proBg:getContentSize().height/2)
     self.process:setPercentage(100)
     
+    
+    self.countDown = 0  
+    self.countDownLabel = cc.uiloader:seekNodeByName(self.m_mapView,"BitmapLabel_14")
+    self.countDownLabel:setVisible(false)
+    self.countDownLabel:setColor(cc.c3b(50,222,255))
+    self.countDownLabel:setString((self.countDown/60)..":"..(self.countDown%60))
+    self:updateStartTime()
+
 
     --监听钻石
     self.diamondHandler = GameDispatcher:addListener(EventNames.EVENT_DIAMOND_CHANGE,handler(self,self.updateDiamond))
@@ -60,6 +124,104 @@ function MapView:ctor(parameters)
     GameDispatcher:addListener(EventNames.EVENT_UPDATE_BEST,handler(self,self.updateBestFloor))
     GameDispatcher:addListener(EventNames.EVENT_CLOSE_TIME,handler(self,self.startProcess))
     GameDispatcher:addListener(EventNames.EVENT_STOP_COUNTDOWN,handler(self,self.stopProcess))
+    GameDispatcher:addListener(EventNames.EVENT_HIDE_BOTTOM,handler(self,self.hideBottom))
+    GameDispatcher:addListener(EventNames.EVENT_UPDATE_STARTROCKET,handler(self,self.updateStartRocket))
+    self.m_background = GameDispatcher:addListener(EventNames.EVENT_BACKGROUND,handler(self,self.enterBackground))
+
+end
+
+function MapView:enterBackground()
+    GameDataManager.setStartEndTime(TimeUtil.getTimeStamp(),self.countDown)
+end
+
+function MapView:updateStartTime()
+    local time1,time2 = GameDataManager.getStartEndTime()
+    if GameDataManager.getStartCount()==2 then
+        if TimeUtil.getTimeStamp() - time1 >= time2 then
+            self.rocket:setButtonEnabled(true)
+            self.countDownLabel:setVisible(false)
+            GameDataManager.resetStartCount()
+        else
+            self.countDown = time2 - (TimeUtil.getTimeStamp() - time1)
+            GameDataManager.setStartEndTime(TimeUtil.getTimeStamp(),self.countDown)
+            self.countDownLabel:setVisible(true)
+            self.countDownLabel:setString(string.format("%02d:%02d",self.countDown/60,self.countDown%60))
+            self.rocket:setButtonEnabled(false)
+            self.m_Handler = Scheduler.scheduleGlobal(handler(self,self.updateCountDown), 1)
+        end
+    end
+end
+
+function MapView:updateStartRocket()
+    if GameDataManager.getStartCount() == 2 then
+        self.countDown = CountDownTime
+        GameDataManager.setStartEndTime(TimeUtil.getTimeStamp(),self.countDown)
+        self.countDownLabel:setString(string.format("%02d:%02d",self.countDown/60,self.countDown%60))
+        self.rocket:setButtonEnabled(false)
+        self.countDownLabel:setVisible(true)
+        self.m_Handler = Scheduler.scheduleGlobal(handler(self,self.updateCountDown), 1)
+    end
+end
+
+function MapView:updateCountDown()
+    self.countDown = self.countDown - 1
+    GameDataManager.setStartEndTime(TimeUtil.getTimeStamp(),self.countDown)
+    self.countDownLabel:setString(string.format("%02d:%02d",self.countDown/60,self.countDown%60))
+    if self.countDown <= 0 then
+        self.countDown = 0
+        self.rocket:setButtonEnabled(true)
+        self.countDownLabel:setVisible(false)
+        GameDataManager.resetStartCount()
+        if self.m_Handler then
+            Scheduler.unscheduleGlobal(self.m_Handler)
+            self.m_Handler=nil
+        end
+    end
+end
+
+function MapView:fingerAct()
+    self.finger = display.newSprite("effect/guide_1.png"):addTo(self)
+    local animation = cc.AnimationCache:getInstance():getAnimation("guide")
+    local animate = cc.Animate:create(animation)
+    local seq = cc.RepeatForever:create(animate)
+    self.finger:runAction(seq)
+--    ccs.ArmatureDataManager:getInstance():addArmatureFileInfo("effect/szc0.png", "effect/szc0.plist" , "effect/szc.ExportJson" )
+--    self.finger = ccs.Armature:create("szc")
+--    self:addChild(self.finger)
+--    self.finger:getAnimation():playWithIndex(0)
+    self.finger:setPosition(cc.p(display.cx,display.bottom+250))
+end
+
+function MapView:hideBottom(parm)
+    self.Image_10:stopAllActions()
+    if parm.data then
+        self.finger:setVisible(true)
+        self.Button_set:setButtonEnabled(false)
+        local move = cc.MoveBy:create(0.2,cc.p(0,220))
+        self.Image_10:runAction(move)
+        local move2 = cc.MoveBy:create(0.2,cc.p(0,220))
+        self.countDownLabel:runAction(move2)
+    else
+        self.finger:setVisible(false)
+        self.Button_set:setButtonEnabled(true)
+        local move = cc.MoveBy:create(0.2,cc.p(0,-220))
+        self.Image_10:runAction(move)
+        local move2 = cc.MoveBy:create(0.2,cc.p(0,-220))
+        self.countDownLabel:runAction(move2)
+    end
+end
+
+--打开火箭冲刺界面
+function MapView:openRocketView()
+    self.Image_10:stopAllActions()
+    self.finger:setVisible(false)
+    local move = cc.MoveBy:create(0.1,cc.p(0,-220))
+    local callfunc = cc.CallFunc:create(function()
+        self.openClick = false
+        GameDispatcher:dispatch(EventNames.EVENT_ROCKET_VIEW)
+    end)
+    local seq = cc.Sequence:create(move,callfunc)
+    self.Image_10:runAction(seq)
 end
 
 function MapView:updateDiamond()
@@ -128,10 +290,18 @@ function MapView:dispose(parameters)
     GameDispatcher:removeListenerByName(EventNames.EVENT_UPDATE_FLOOR)
     GameDispatcher:removeListenerByName(EventNames.EVENT_CLOSE_TIME)
     GameDispatcher:removeListenerByName(EventNames.EVENT_STOP_COUNTDOWN)
+    GameDispatcher:removeListenerByName(EventNames.EVENT_HIDE_BOTTOM)
+    GameDispatcher:removeListenerByName(EventNames.EVENT_UPDATE_STARTROCKET)
+    GameDispatcher:removeListenerByHandle(self.m_background)
     
     if self.timeHandler then
         Scheduler.unscheduleGlobal(self.timeHandler)
         self.timeHandler=nil
+    end
+    
+    if self.m_Handler then
+        Scheduler.unscheduleGlobal(self.m_Handler)
+        self.m_Handler=nil
     end
 
     self:removeFromParent(true)

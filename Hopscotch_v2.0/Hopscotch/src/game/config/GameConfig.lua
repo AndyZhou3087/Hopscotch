@@ -13,6 +13,15 @@ InitDiamond = 20
 
 --获取礼物花费钻石的数量
 DiamondSpendReward = 100
+--冲刺花费数量
+CostSpringDiamond = 50
+
+--看视频得钻石随机范围
+VideoDiamond = {50,100}
+--开局冲刺随机层数
+OpenRocketFloor = {80,120}
+
+CountDownTime = 30*60
 
 --视觉开关
 Game_Visible = true
@@ -23,11 +32,11 @@ Sequent_Click_Time = 0.05
 --金币移动速度
 GOLD_SPEED=26
 
---横跑出现的层数(每50层出现一次)
-RunningFloorNum = 60
+--横跑出现的层数(每60层出现一次)
+RunningFloorNum = 100000
 --随机每多少层出现一次
 RunningMin = RunningFloorNum
-RunningMax = 300
+RunningMax = 100000
 
 --背景移动系数
 Rdt_1 = 0.97
@@ -45,7 +54,8 @@ MaxShowCount = 3
 --初始化房间数
 MAP_ROOM_INIT_NUM = 30
 --地图房间最大数
-MAP_ROOM_MAX = 50
+MAXROOM = 50
+MAP_ROOM_MAX = MAXROOM
 --其它缓存房间最大数
 MAP_ROOM_OTHER_MAX = 20
 
@@ -55,19 +65,19 @@ MAP_ZORDER_MAX=0
 
 Map_Grade = 
 {
-    floor_D = 1,    --1-50层，7块砖，6块半砖普通房间，吊车。
-    floor_C = 100,   --51-150层，7块，6块半，6块砖，吊车，倾斜，双向倾斜。
-    floor_B = 150,  --151-300层，6块，5块半，5块，吊车，倾斜，双向倾斜。
-    floor_A = 300,  --301-500层，5块，四块半，四块，吊车，倾斜，双向倾斜。
-    floor_S = 500,  --501层+，四块，三块半，三块，吊车，倾斜，双向倾斜。
+    floor_D = 1,    --1-50层，7块砖，6块半砖普通房间，吊车。单向倾斜
+    floor_C = 50,   --51-150层，6块半，6块砖，吊车，单向倾斜，双向倾斜。
+    floor_B = 150,  --151-300层，6块，5块半，5块，吊车，单向倾斜，双向倾斜。
+    floor_A = 300,  --301-500层，5块，四块半，四块，吊车，单向倾斜，双向倾斜。
+    floor_S = 500,  --501层+，四块，三块半，三块，吊车，单向倾斜，双向倾斜。
 }
 MAP_SPEED = 
 {
-    floor_D = 140,  --角色初始速度
+    floor_D = 150,  --角色初始速度
     floor_C = 150,
-    floor_B = 160,
-    floor_A = 180,
-    floor_S = 200,
+    floor_B = 150,
+    floor_A = 150,
+    floor_S = 150,
 }
 
 --封闭房间停顿时间

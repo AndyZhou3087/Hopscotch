@@ -7,6 +7,8 @@ local ShopView = class("ShopView",BaseUI)
 local CustomListView = require("game.custom.CustomListView")
 local ShopItem = require("game.view.shop.ShopItem")
 
+local Scheduler = require("framework.scheduler")
+
 local shopX = {300,450,600,750,900,1050,1200,150,0}
 local sceneX = {340,510,680,850,1020,1190,1360,1530,1700,1870,2040,2210,170,0}
 local roleX = {300,450,600,750,900,1050,1200,1350,1500,1650,1800,1950,150,0}
@@ -107,53 +109,73 @@ function ShopView:ctor(parameters)
     
     --角色购买
     self.roleBuy = cc.uiloader:seekNodeByName(self.m_json,"roleBuy")
+    self.rolePrice = cc.uiloader:seekNodeByName(self.m_json,"rolePrice")
     self.priceImg_role = cc.uiloader:seekNodeByName(self.m_json,"priceImg_role")
     self.priceImg_role:setButtonEnabled(false)
     self.roleBuy:onButtonPressed(function(_event)    --按下
         self.priceImg_role:setPositionY(self.priceImg_role:getPositionY()-8)
+        self.rolePrice:setPositionY(self.rolePrice:getPositionY()-8)
     end)
     self.roleBuy:onButtonRelease(function(_event)    --触摸离开
         self.priceImg_role:setPositionY(self.priceImg_role:getPositionY()+8)
+        self.rolePrice:setPositionY(self.rolePrice:getPositionY()+8)
     end)
     self.roleBuy:onButtonClicked(function (event)
         Tools.printDebug("brj hopscotch 购买 角色")
         if not self.roleMove and not GameDataManager.getRoleModle(self.roleId) then
-            local payId = RoleConfig[self.roleId].payId
-            local oId = SDKUtil.getOrderId(payId)
-            SDKUtil.toPay({goodsId=payId,orderId=oId,callback=function(_res)
-                if SDKUtil.PayResult.Success == _res then
-                    GameDataManager.unLockModle(self.roleId)
-                    GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买成功"})
-                else
-                    GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买失败"})
-                end
-            end})
+--            local payId = RoleConfig[self.roleId].payId
+--            local oId = SDKUtil.getOrderId(payId)
+--            SDKUtil.toPay({goodsId=payId,orderId=oId,callback=function(_res)
+--                if SDKUtil.PayResult.Success == _res then
+--                    GameDataManager.unLockModle(self.roleId)
+--                    GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买成功"})
+--                else
+--                    GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买失败"})
+--                end
+--            end})
+            if GameDataManager.getDiamond() >= RoleConfig[self.roleId].diamond then
+                GameDataManager.costDiamond(RoleConfig[self.roleId].diamond)
+                GameDataManager.unLockModle(self.roleId)
+                GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买成功"})
+            else
+                GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="钻石不足"})
+            end
         end
     end)
     
     --场景购买
     self.sceneBuy = cc.uiloader:seekNodeByName(self.m_json,"sceneBuy")
+    self.scenePrice = cc.uiloader:seekNodeByName(self.m_json,"scenePrice")
     self.priceImg_scene = cc.uiloader:seekNodeByName(self.m_json,"priceImg_scene")
     self.priceImg_scene:setButtonEnabled(false)
     self.sceneBuy:onButtonPressed(function(_event)    --按下
         self.priceImg_scene:setPositionY(self.priceImg_scene:getPositionY()-8)
+        self.scenePrice:setPositionY(self.scenePrice:getPositionY()-8)
     end)
     self.sceneBuy:onButtonRelease(function(_event)    --触摸离开
         self.priceImg_scene:setPositionY(self.priceImg_scene:getPositionY()+8)
+        self.scenePrice:setPositionY(self.scenePrice:getPositionY()+8)
     end)
     self.sceneBuy:onButtonClicked(function (event)
         Tools.printDebug("brj hopscotch 购买 场景")
         if not self.move and not GameDataManager.getSceneModle(self.sceneId) then
-            local payId = SceneConfig[self.sceneId].payId
-            local oId = SDKUtil.getOrderId(payId)
-            SDKUtil.toPay({goodsId=payId,orderId=oId,callback=function(_res)
-                if SDKUtil.PayResult.Success == _res then
-                    GameDataManager.unLockScene(self.sceneId)
-                    GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买成功"})
-                else
-                    GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买失败"})
-                end
-            end})
+--            local payId = SceneConfig[self.sceneId].payId
+--            local oId = SDKUtil.getOrderId(payId)
+--            SDKUtil.toPay({goodsId=payId,orderId=oId,callback=function(_res)
+--                if SDKUtil.PayResult.Success == _res then
+--                    GameDataManager.unLockScene(self.sceneId)
+--                    GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买成功"})
+--                else
+--                    GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买失败"})
+--                end
+--            end})
+            if GameDataManager.getDiamond() >= RoleConfig[self.sceneId].diamond then
+                GameDataManager.costDiamond(RoleConfig[self.sceneId].diamond)
+                GameDataManager.unLockScene(self.sceneId)
+                GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="购买成功"})
+            else
+                GameDispatcher:dispatch(EventNames.EVENT_FLY_TEXT,{text ="钻石不足"})
+            end
         end
     end)
     
@@ -191,7 +213,43 @@ function ShopView:ctor(parameters)
     GameDispatcher:addListener(EventNames.EVENT_UPDATE_SCENE,handler(self,self.updateScene))
     GameDispatcher:addListener(EventNames.EVENT_DIAMOND_CHANGE,handler(self,self.updateDiamond))
     GameDispatcher:addListener(EventNames.EVENT_UPDATE_ROLE,handler(self,self.updateRole))
+    
+    
+    -----------==============测试
+--    self:test()
 
+end
+
+function ShopView:test()
+    self.lv = cc.ui.UIListView.new {
+        bgScale9 = true,
+        viewRect = cc.rect(0, 0, display.width, 200),
+        direction = cc.ui.UIScrollView.DIRECTION_HORIZONTAL}
+        :onTouch(handler(self, self.touchListener))
+        :addTo(self)
+    self.lv:setPosition(cc.p(0,display.cy))
+    
+    for i=1,#RoleConfig do
+        local item = self.lv:newItem()
+        local content = display.newSprite(RoleConfig[GameDataManager.getFightRole()].roleImg)
+        local size = content:getCascadeBoundingBox().size
+        content:setTouchEnabled(false)
+        content:setContentSize(size.width, size.height)
+        item:setItemSize(size.width*1.5, size.height)
+        item:addContent(content)
+        self.lv:addItem(item)
+    end
+    self.lv:reload()
+    
+    self.ooh = Scheduler.scheduleGlobal(handler(self,self.onEnterFrame),0.01)
+end
+
+function ShopView:onEnterFrame()
+    print("000000000000000000000---------------------  ",self.lv.scrollNode:getPositionX())
+end
+
+function ShopView:touchListener(event)
+	
 end
 
 function ShopView:initRoleList()
@@ -355,7 +413,8 @@ function ShopView:touchListenerRole(event)
         end
 
         self.roleName:setButtonImage("disabled",RoleConfig[id].roleName)
-        self.priceImg_role:setButtonImage("disabled",RoleConfig[id].priceRes)
+--        self.priceImg_role:setButtonImage("disabled",RoleConfig[id].priceRes)
+        self.rolePrice:setString(RoleConfig[id].diamond)
 
         local oldP = self["roleX"..self.roleId]
         local newP = 0
@@ -387,7 +446,8 @@ function ShopView:touchListenerRole(event)
             self.roleBuy:setVisible(true)
         end
         self.roleName:setButtonImage("disabled",RoleConfig[id].roleName)
-        self.priceImg_role:setButtonImage("disabled",RoleConfig[id].priceRes)
+--        self.priceImg_role:setButtonImage("disabled",RoleConfig[id].priceRes)
+        self.rolePrice:setString(RoleConfig[id].diamond)
     end
 end
 
@@ -414,7 +474,8 @@ function ShopView:touchListenerScene(event)
         end
        
         self.sceneName:setButtonImage("disabled",SceneConfig[id].sceneName)
-        self.priceImg_scene:setButtonImage("disabled",SceneConfig[id].priceRes)
+--        self.priceImg_scene:setButtonImage("disabled",SceneConfig[id].priceRes)
+        self.scenePrice:setString(SceneConfig[id].diamond)
         
         local oldP = self["sceneX"..self.sceneId]
         local newP = 0
@@ -446,7 +507,8 @@ function ShopView:touchListenerScene(event)
             self.sceneBuy:setVisible(true)
         end
         self.sceneName:setButtonImage("disabled",SceneConfig[id].sceneName)
-        self.priceImg_scene:setButtonImage("disabled",SceneConfig[id].priceRes)
+--        self.priceImg_scene:setButtonImage("disabled",SceneConfig[id].priceRes)
+        self.scenePrice:setString(SceneConfig[id].diamond)
     end
 end
 

@@ -10,7 +10,7 @@ AudioManager.Music_Path = "music/"
 AudioManager.Ground_Music_Type=
     {
         --战斗场景音乐
-        Fight_Bg = "bg.ogg",
+        Fight_Bg = "bg.mp3",
     }
 --音效类型
 AudioManager.Sound_Effect_Type=

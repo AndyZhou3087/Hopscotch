@@ -59,6 +59,10 @@ function GameDataManager.initUserData()
     GameDataManager.initGoodsData()
     --初始化房间楼层权重
     GameDataManager.initRoomWeight()
+    --复活
+    GameDataManager.initRevive()
+    --初始化开局
+    GameDataManager.initStartRocket()
 
     --初始化礼包信息
 --    GameDataManager.initGift()
@@ -172,6 +176,90 @@ end
 
 function GameDataManager.resetGameDiamond()
     diamond_game = 0
+end
+
+--===================End=========================
+
+--========================复活=============================
+--复活次数
+local reviveCount = 0
+function GameDataManager.initRevive()
+    reviveCount = DataPersistence.getAttribute("reviveCount")
+end
+
+function GameDataManager.addReviveCount()
+    reviveCount = reviveCount + 1
+    if reviveCount>=2 then
+    	reviveCount = 2
+        GameDataManager.setReviveEndTime(TimeUtil.getTimeStamp(),CountDownTime)
+        GameDispatcher:dispatch(EventNames.EVENT_UPDATE_REVIVE)
+    end
+end
+
+function GameDataManager.getReviveCount()
+    return reviveCount
+end
+
+function GameDataManager.resetReviveCount()
+	reviveCount = 0
+end
+
+--游戏内倒计时回满结束时间
+function GameDataManager.setReviveEndTime(_time,_pTime)
+    DataPersistence.updateAttribute("revive_endTime",_time) --距体力回满结束时间戳
+    DataPersistence.updateAttribute("remain_reviveTime",_pTime)  --距离回满剩余时间
+end
+function GameDataManager.getReviveEndTime()
+    return DataPersistence.getAttribute("revive_endTime"),DataPersistence.getAttribute("remain_reviveTime") --距体力回满结束时间戳
+end
+
+--游戏内复活
+local isRevive = false
+function GameDataManager.setRevive(_enable)
+    isRevive = _enable
+end
+--
+function GameDataManager.getRevive()
+    return isRevive
+end
+--重置游戏内复活
+function GameDataManager.resetRevive()
+    isRevive = false
+end
+
+--===================End=========================
+
+--========================开局倒计时=============================
+--开局使用次数
+local startCount = 0
+function GameDataManager.initStartRocket()
+    startCount = DataPersistence.getAttribute("startCount")
+end
+
+function GameDataManager.addStartCount()
+    startCount = startCount + 1
+    if startCount>=2 then
+        startCount = 2
+        GameDataManager.setStartEndTime(TimeUtil.getTimeStamp(),CountDownTime)
+        GameDispatcher:dispatch(EventNames.EVENT_UPDATE_STARTROCKET)
+    end
+end
+
+function GameDataManager.getStartCount()
+    return startCount
+end
+
+function GameDataManager.resetStartCount()
+    startCount = 0
+end
+
+--游戏内倒计时回满结束时间
+function GameDataManager.setStartEndTime(_time,_pTime)
+    DataPersistence.updateAttribute("start_endTime",_time) --距体力回满结束时间戳
+    DataPersistence.updateAttribute("remain_startTime",_pTime)  --距离回满剩余时间
+end
+function GameDataManager.getStartEndTime()
+    return DataPersistence.getAttribute("start_endTime"),DataPersistence.getAttribute("remain_startTime") --距体力回满结束时间戳
 end
 
 --===================End=========================
@@ -342,7 +430,7 @@ function GameDataManager.useGoodsExp(_goodsId)
             GameDispatcher:dispatch(EventNames.EVENT_SLOWLY,{time=goodsCon.time,speed = goodsCon.speed})
         elseif goodsCon.type == GOODS_TYPE.TokenAdd then
             Tools.printDebug("brj 获得一代币")
-            GameDispatcher:dispatch(EventNames.EVENT_SLOWLY,{count=goodsCon.count})
+            GameDispatcher:dispatch(EventNames.EVENT_GET_TOKEN,{count=goodsCon.count})
         end
         return true
     else
@@ -396,12 +484,12 @@ end
 
 function GameDataManager.initSpecialWeight()
     for key, var in pairs(Map_Grade) do
-        if var~=Map_Grade.floor_S then
+--        if var~=Map_Grade.floor_S then
             GameDataManager.getMapInArr(var)
-        end
+--        end
     end
     for key, var in pairs(Map_Grade) do
-        if var ~= Map_Grade.floor_S then
+--        if var ~= Map_Grade.floor_S then
             local _group
             if var == Map_Grade.floor_D then
                 _group = MapGroupD
@@ -411,6 +499,8 @@ function GameDataManager.initSpecialWeight()
                 _group = MapGroupB
             elseif var == Map_Grade.floor_A then
                 _group = MapGroupA
+            elseif var == Map_Grade.floor_S then
+                _group = MapGroupS
             end
             if not bgWeight[var] then
                 bgWeight[var] = {}
@@ -439,7 +529,7 @@ function GameDataManager.initSpecialWeight()
                     bgConfig[var][_group[3]][arr2[v]._id] = arr2[v]
                 end
             end
-        end
+--        end
     end
 end
 
@@ -468,6 +558,9 @@ function GameDataManager.getMapInArr(_type)
     elseif _type == Map_Grade.floor_A then
         config = MapGroupConfigA
         group = MapGroupA
+    elseif _type == Map_Grade.floor_S then
+        config = MapGroupConfigS
+        group = MapGroupS
     end
     for key, var in pairs(config) do
         local info = var
@@ -586,8 +679,21 @@ function GameDataManager.getDataIdByWeight(_type,_bgType)
                 _weight = _weightA
             end
         elseif _type == Map_Grade.floor_S then
-            configArr = configArrS
-            _weight = _weightS
+            if _bgType then
+                if _bgType == MapGroupS[1] then
+                    configArr = bgConfig[_type][MapGroupS[1]]
+                    _weight = bgWeight[_type][MapGroupS[1]]
+                elseif _bgType == MapGroupS[2] then
+                    configArr = bgConfig[_type][MapGroupS[2]]
+                    _weight = bgWeight[_type][MapGroupS[2]]
+                elseif _bgType == MapGroupS[3] then
+                    configArr = bgConfig[_type][MapGroupS[3]]
+                    _weight = bgWeight[_type][MapGroupS[3]]
+                end
+            else
+                configArr = configArrS
+                _weight = _weightS
+            end
         elseif _type == -1 then 
             configArr = configArrF
             _weight = _weightF
@@ -598,14 +704,14 @@ function GameDataManager.getDataIdByWeight(_type,_bgType)
     end
     local _wegt = math.random(1,_weight)
     local t = 0
-    Tools.printDebug("brj Hopscotch -------------------------------所有权重：",_wegt,_weight)
+--    Tools.printDebug("brj Hopscotch ----------------所有权重：",_wegt,_weight)
     --得到当前id
     local id = 0
     for key, var in pairs(configArr) do
         t = t + var.probability
         if t >= _wegt then
             id = var._id
-            Tools.printDebug("brj Hopscotch 随机值：",id)
+            Tools.printDebug("brj Hopscotch 随机值：",id,t,_wegt)
             return id
         end
     end
@@ -744,6 +850,9 @@ function GameDataManager.saveGameData()
     DataPersistence.updateAttribute("bestscore",userData.record)
     DataPersistence.updateAttribute("cur_roleID",curRoleID)
     DataPersistence.updateAttribute("cur_sceneID",curSceneID)
+    
+    DataPersistence.updateAttribute("reviveCount",reviveCount)
+    DataPersistence.updateAttribute("startCount",startCount)
 
     local modleList = {}
     for key, var in pairs(modleDic) do
