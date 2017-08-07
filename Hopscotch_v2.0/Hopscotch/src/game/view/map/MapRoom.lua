@@ -245,13 +245,13 @@ function MapRoom:addPhysicsBody(_node,tag)
         blockBody:setMass(Block_MASS)
         blockBody:setDynamic(false)
         if tag == ELEMENT_TAG.FLOOR then
-            blockBody:setCategoryBitmask(0x01)
+            blockBody:setCategoryBitmask(0x05)
             blockBody:setContactTestBitmask(0x1111)
-            blockBody:setCollisionBitmask(0x03)
+            blockBody:setCollisionBitmask(0x07)
         else
-            blockBody:setCategoryBitmask(0x03)
+            blockBody:setCategoryBitmask(0x07)
             blockBody:setContactTestBitmask(0x1111)
-            blockBody:setCollisionBitmask(0x03)
+            blockBody:setCollisionBitmask(0x07)
         end
         blockBody:retain()
         _node:setSize(size)

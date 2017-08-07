@@ -102,6 +102,13 @@ function MapLayer:ctor(parameters)
         phantom:setVisible(false)
         self.phantom[var] = phantom
     end
+    
+    --竞技模式
+    if GAME_CONTROL == Game_Mode.Athletics then
+        self.matchRole = Player.new(1)
+        self:addChild(self.matchRole,MAP_ZORDER_MAX+1)
+        self.matchRole:setPosition(cc.p(display.cx+200,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
+    end
 
     self:setCameraMask(2)
     
@@ -817,7 +824,6 @@ function MapLayer:onEnterFrame(dt)
 
     local _scaleX=self.m_player:getScaleX()
     local vel=self.m_player:getBody():getVelocity()
-    
     self.m_player:setVelocity(cc.p(-_scaleX/math.abs(_scaleX)*self.m_player:getSpeed(),vel.y))
 
     local _body = self.m_player:getBody()
@@ -836,6 +842,29 @@ function MapLayer:onEnterFrame(dt)
         self.m_physicWorld:rayCast(handler(self,self.rayCastFuncX),cc.p(_p.x,_p.y-_size.height*0.25),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y-_size.height*0.25))
     end
     
+    
+    --竞技模式
+    if self.matchRole then
+        local m_scaleX=self.matchRole:getScaleX()
+        local velo=self.matchRole:getBody():getVelocity()
+        self.matchRole:setVelocity(cc.p(-m_scaleX/math.abs(m_scaleX)*self.matchRole:getSpeed(),velo.y))
+        
+        local _size = self.matchRole:getSize()
+        local _body = self.matchRole:getBody()
+        local _p = _body:getPosition()
+        local _veloc = _body:getVelocity()
+        local _scaleX = self.matchRole:getScaleX()
+        local _add = -1*_scaleX/math.abs(_scaleX)  --因为人物默认是向左的，所以乘以-1
+--        if self.matchRole:getJump() then
+--            self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y+_size.height*0.5),cc.p(_p.x,_p.y+_size.height*0.5-Raycast_DisY))--起始坐标和结束坐标(是指发出的一条射线)
+--        else
+--            self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y-_size.height*0.5),cc.p(_p.x,_p.y-_size.height*0.5-Raycast_DisY))
+--        end
+
+        if not self.matchRole:isInState(PLAYER_STATE.Rocket) then
+            self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y-_size.height*0.25),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y-_size.height*0.25))
+        end
+    end
     
     --=====================幻影效果
     if self.phantomShow then
@@ -1115,6 +1144,7 @@ function MapLayer:collisionBeginCallBack(parameters)
     	return true
     end
     
+    
     if obstacleTag == ELEMENT_TAG.FLOOR then
 --        Tools.printDebug("----------brj 碰撞检测------------: ")
         self.isCollision = true
@@ -1155,13 +1185,13 @@ function MapLayer:collisionBeginCallBack(parameters)
             if player:getJump() then
                 player:toStopJump()
             end
-            local vel=self.m_player:getBody():getVelocity()
-            local _size = self.m_player:getSize()
+            local vel=player:getBody():getVelocity()
+            local _size = player:getSize()
             if playerBP.x+_size.width*0.5<obstacleBP.x then
-                player:setVelocity(cc.p(self.m_player:getSpeed(),vel.y))
+                player:setVelocity(cc.p(player:getSpeed(),vel.y))
                 player:setScaleX(math.abs(_scaleX))
             else
-                player:setVelocity(cc.p(-self.m_player:getSpeed(),vel.y))
+                player:setVelocity(cc.p(-player:getSpeed(),vel.y))
                 player:setScaleX(-math.abs(_scaleX))
             end
        end
@@ -1234,38 +1264,38 @@ function MapLayer:rayCastFunc(_world,_p1,_p2,_p3)
     return true
 end
 
---碰撞反射，从人物中心向下或向上发射一个比自身一半多 Raycast_DisY 像素的探测射线，进行检测有无障碍物
-function MapLayer:rayCastFuncY(_world,_p1,_p2,_p3)
-    if self.backOrigin then
-        return true
-    end
-
+--竞技对手左右移动，碰撞反射，从人物中心向下或向上发射一个比自身一半多 Raycast_DisY 像素的探测射线，进行检测有无障碍物
+function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
+    
     local _body = _p1.shape:getBody()
     local _bnode = _body:getNode()
     local _tag = _body:getTag()
+    local _scaleX = self.matchRole:getScaleX()
+    local playerBP=self.matchRole:getBody():getPosition()
+    local obstacleBP=_body:getPosition()
 
-    if tolua.isnull(_bnode) then
-        return false
-    end
-    if _tag==ELEMENT_TAG.PLAYER_TAG then
+    if (not _bnode) or _tag==ELEMENT_TAG.PLAYER_TAG_1 then
         return true
     end
-
-    Tools.printDebug("-----------射线检测下方地板：",_tag)
-    if _tag < ELEMENT_TAG.PLAYER_TAG and _tag > ELEMENT_TAG.SPECIAL_TAG then
-        Tools.printDebug("-----------!!!!!!!!!!!!!!!!!!!!!!：")
---        self.m_jump = true
-        self:playerDead()
-        return true
+    
+    if _tag==ELEMENT_TAG.WALLLEFT or _tag==ELEMENT_TAG.WALLRIGHT or _tag==ELEMENT_TAG.SPECIAL_TAG then
+        if not tolua.isnull(_bnode) then
+            local vel=self.matchRole:getBody():getVelocity()
+            local _size = self.matchRole:getSize()
+            if playerBP.x+_size.width*0.5<obstacleBP.x then
+                self.matchRole:setVelocity(cc.p(self.matchRole:getSpeed(),vel.y))
+                self.matchRole:setScaleX(math.abs(_scaleX))
+            else
+                self.matchRole:setVelocity(cc.p(-self.matchRole:getSpeed(),vel.y))
+                self.matchRole:setScaleX(-math.abs(_scaleX))
+            end
+       end
     end
 
     return true
 end
 
 function MapLayer:rayCastFuncX(_world,_p1,_p2,_p3)
---    if self.backOrigin then
---        return true
---    end
 
     local _body = _p1.shape:getBody()
     local _bnode = _body:getNode()

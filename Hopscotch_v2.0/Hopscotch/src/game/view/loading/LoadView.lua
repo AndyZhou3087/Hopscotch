@@ -70,6 +70,7 @@ function LoadView:ctor(parameters)
             if not self.touchClick then
             	self.touchClick = true
                 Tools.printDebug("-------------------进入主场景")
+                GAME_CONTROL = Game_Mode.Common
                 GameDataManager.generatePlayerVo()  --产生新的角色数据对象
                 app:enterGameScene()
             end
@@ -78,8 +79,21 @@ function LoadView:ctor(parameters)
         end
     end)
     
-    
     LoadResManager.toLoadPlayerRes(handler(self,self.playerResFinish))
+    
+    
+    --竞技模式
+    self.Button_14 = cc.uiloader:seekNodeByName(self.m_json,"Button_14")
+    self.Button_14:onButtonClicked(function (event)
+        Tools.printDebug("--------brj 竞技模式")
+        if not self.touchClick then
+            self.touchClick = true
+            Tools.printDebug("-------------------进入竞技模式")
+            GAME_CONTROL = Game_Mode.Athletics
+            GameDataManager.generatePlayerVo()  --产生新的角色数据对象
+            app:enterGameScene()
+        end
+    end)
 end
 
 function LoadView:playerResFinish()

@@ -62,6 +62,13 @@ MAP_ROOM_OTHER_MAX = 20
 --地图当前ZOder
 MAP_ZORDER_MAX=0
 
+--游戏模式
+Game_Mode = {
+    Common = 1,
+    Athletics = 2,
+}
+
+GAME_CONTROL = Game_Mode.Common
 
 Map_Grade = 
 {
@@ -154,9 +161,10 @@ UI_ZORDER =
 ELEMENT_TAG=
     {
         PLAYER_TAG = 1,  --角色
-        WALLLEFT = 2,  --左墙壁
-        WALLRIGHT = 3,  --右墙壁
-        FLOOR = 4,    --普通地板
+        PLAYER_TAG_1 = 2,  --角色
+        WALLLEFT = 3,  --左墙壁
+        WALLRIGHT = 4,  --右墙壁
+        FLOOR = 5,    --普通地板
         DIAMOND_TAG = 6,   --金币
         GOOD_TAG = 7,    --道具
         SPECIAL_TAG = 8,  --特殊钢架

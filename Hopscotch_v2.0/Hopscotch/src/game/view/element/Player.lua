@@ -57,7 +57,7 @@ Player._FILTERS = {
 
 
 ---人物类
-function Player:ctor()
+function Player:ctor(_type)
     Player.super.ctor(self)
     self.m_vo = GameDataManager.getPlayerVo()
     self.m_buffArr = {} --buff列表
@@ -65,6 +65,7 @@ function Player:ctor()
 
     self.m_life = self.m_vo.m_lifeNum
     self.m_speed = MAP_SPEED.floor_D
+    self.m_type = _type
 
     self.m_jump = false
 
@@ -92,7 +93,7 @@ function Player:ctor()
         self.m_armature:setScale(0.45)
         p_size = self.m_armature:getCascadeBoundingBox().size
     end
-    self:addBody(cc.p(0,0),p_size)
+    self:addBody(cc.p(0,0),p_size,_type)
     
     --迟钝药水
     GameDispatcher:addListener(EventNames.EVENT_SLOWLY,handler(self,self.slowly))
@@ -137,7 +138,7 @@ function Player:createModle(_actionName)
     self.m_armature:runAction(seq)
 end
 
-function Player:addBody(_offset,size)
+function Player:addBody(_offset,size,_type)
     local _size = nil
     if size == nil then
         _size = self.m_armature:getCascadeBoundingBox().size
@@ -148,12 +149,19 @@ function Player:addBody(_offset,size)
     self.m_body = cc.PhysicsBody:createBox(_size,
     cc.PhysicsMaterial(DENSITY,ELASTICITY,FRICTION),_offset)
     self.m_body:setMass(MASS)
-    self.m_body:setCategoryBitmask(0x03)
-    self.m_body:setContactTestBitmask(0x1111)
-    self.m_body:setCollisionBitmask(0x03)
+    if _type == 1 then
+        self.m_body:setCategoryBitmask(0x04)
+        self.m_body:setContactTestBitmask(0x1111)
+        self.m_body:setCollisionBitmask(0x04)
+        self.m_body:setTag(ELEMENT_TAG.PLAYER_TAG_1)
+    else
+        self.m_body:setCategoryBitmask(0x03)
+        self.m_body:setContactTestBitmask(0x1111)
+        self.m_body:setCollisionBitmask(0x03)
+        self.m_body:setTag(ELEMENT_TAG.PLAYER_TAG)
+    end
     self.m_body:setRotationEnable(false)
     self.m_body:setMoment(0)
-    self.m_body:setTag(ELEMENT_TAG.PLAYER_TAG)
     self.m_body:setVelocityLimit(Speed_Max)
     self:setPhysicsBody(self.m_body)
 
@@ -231,7 +239,7 @@ function Player:toStartJump()
         Scheduler.unscheduleGlobal(self.jumpHandler)
         self.jumpHandler=nil
     end
-    self.m_body:setCollisionBitmask(0x06)
+    self.m_body:setCollisionBitmask(0x08)
 --    self:setGravityEnable(false)
     self:stopAllActions()
     self:createModle(self.m_jumpModle)
@@ -244,7 +252,11 @@ function Player:toStopJump()
         self.jumpHandler=nil
     end
     self.m_jump = false
-    self.m_body:setCollisionBitmask(0x03)
+    if self.m_type == 1 then
+        self.m_body:setCollisionBitmask(0x04)
+    else
+        self.m_body:setCollisionBitmask(0x03)
+    end
     self:setGravityEnable(true)
     self:stopAllActions()
     self.m_armature:stopAllActions()

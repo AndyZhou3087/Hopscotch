@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <UIProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ProjectDir>G:\dev\BRJ\Hopscotch\UI\HopscotchUI</ProjectDir>
+  <ProjectDir>G:\dev\Hopscotch_v2.0\Hopscotch_v2.0\UI\HopscotchUI</ProjectDir>
   <Version>1.6.0.0</Version>
-  <Resources>G:\dev\BRJ\Hopscotch\UI\HopscotchUI\Resources</Resources>
+  <Resources>G:\dev\Hopscotch_v2.0\Hopscotch_v2.0\UI\HopscotchUI\Resources</Resources>
   <Name>HopscotchUI</Name>
   <JsonFileName>HopscotchUI.json</JsonFileName>
-  <JsonFolder>G:\dev\BRJ\Hopscotch\UI\HopscotchUI\Json</JsonFolder>
+  <JsonFolder>G:\dev\Hopscotch_v2.0\Hopscotch_v2.0\UI\HopscotchUI\Json</JsonFolder>
   <JsonList>
     <string>MainUI.json</string>
     <string>SetUI.json</string>
@@ -30,11 +30,11 @@
     <Width>750</Width>
     <Height>1334</Height>
   </CanvasSize>
-  <filePath>G:\dev\BRJ\Hopscotch\UI\HopscotchUI\HopscotchUI.xml.ui</filePath>
+  <filePath>G:\dev\Hopscotch_v2.0\Hopscotch_v2.0\UI\HopscotchUI\HopscotchUI.xml.ui</filePath>
   <ProjectType>UIProject</ProjectType>
   <ResRelativePath />
   <imageFileList />
   <imagePngList />
   <JsonSuffix>.json</JsonSuffix>
-  <CurrentUIJson>MapView.json</CurrentUIJson>
+  <CurrentUIJson>MainUI.json</CurrentUIJson>
 </UIProject>
