@@ -72,4 +72,12 @@
     <Project>ReviveView</Project>
     <GuidesList />
   </GuidesProject>
+  <GuidesProject>
+    <Project>AI</Project>
+    <GuidesList />
+  </GuidesProject>
+  <GuidesProject>
+    <Project>HopscotchUI_20</Project>
+    <GuidesList />
+  </GuidesProject>
 </ArrayOfGuidesProject>

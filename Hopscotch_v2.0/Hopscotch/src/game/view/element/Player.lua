@@ -88,6 +88,15 @@ function Player:ctor(_type)
             p_size = cc.size(45,65)
             self.errorValue = 15
         end
+        if _type == 1 then
+            self.ai = cc.uiloader:load("json/AI.json")
+            self:addChild(self.ai)
+            if self:getScaleX() == 1 then
+                self.ai:setPosition(cc.p(-45,25))
+            else
+                self.ai:setPosition(cc.p(15,25))
+            end
+        end
     else
         self.m_armature = PhysicSprite.new(res):addTo(self)
         self.m_armature:setScale(0.45)
@@ -284,6 +293,15 @@ function Player:update(dt,_x,_y)
         _vec.x=-self.m_speed
     end
     self:setBodyVelocity(_vec)
+    
+    if self.ai then
+        self.ai:setScaleX(_scaleX)
+        if _scaleX == 1 then
+            self.ai:setPosition(cc.p(-45,20))
+        else
+            self.ai:setPosition(cc.p(30,20))
+        end
+    end
 
 end
 
@@ -423,7 +441,7 @@ function Player:springRocket(parameters)
     
     self.m_armature:setVisible(false)
     self:toRocket()
-    if roomType ~= MAPROOM_TYPE.Running and roomNextType ~= MAPROOM_TYPE.Running then
+    if roomType ~= MAPROOM_TYPE.Running and roomNextType ~= MAPROOM_TYPE.Running or (roomType == MAPROOM_TYPE.Running and curFloor>8) then
         local nextCloseFloorX,nextCloseFloorY
         if floorPos[curCloseFloor+10].x then
             nextCloseFloorX = floorPos[curCloseFloor+10].x
@@ -460,7 +478,7 @@ function Player:springRocket(parameters)
         end
     
         self.toRocketState = 2
-        self:getParent():toRocketRunningLogic(self.toRocketState)
+        self:getParent():toRocketRunningLogic(self.toRocketState,self:getScaleX())
         local count = self:getParent():getRoomByIdx(curCloseFloor+1):getRoomsCount()
         local time = (10-curFloor%10+1)*1/10
         local time2 = count/10*1.5
@@ -486,7 +504,7 @@ function Player:springRocket(parameters)
             end
         end
         self.toRocketState = 3
-        self:getParent():toRocketRunningLogic(self.toRocketState,curRoomKey)
+        self:getParent():toRocketRunningLogic(self.toRocketState,self:getScaleX(),curRoomKey)
         local count = self:getParent():getRoomByIdx(curFloor):getRoomsCount()
         local time = (count-curRoomKey)*1/10
         local time2 = 1
