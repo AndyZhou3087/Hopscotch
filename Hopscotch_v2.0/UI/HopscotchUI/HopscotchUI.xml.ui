@@ -28,8 +28,8 @@
     <string>AI.json</string>
   </JsonList>
   <CanvasSize>
-    <Width>750</Width>
-    <Height>1334</Height>
+    <Width>80</Width>
+    <Height>40</Height>
   </CanvasSize>
   <filePath>G:\dev\Hopscotch_v2.0\Hopscotch_v2.0\UI\HopscotchUI\HopscotchUI.xml.ui</filePath>
   <ProjectType>UIProject</ProjectType>

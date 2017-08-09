@@ -61,7 +61,6 @@ function Player:ctor(_type)
     Player.super.ctor(self)
     self.m_vo = GameDataManager.getPlayerVo()
     self.m_buffArr = {} --buff列表
-    self.phantomCount = 0
 
     self.m_life = self.m_vo.m_lifeNum
     self.m_speed = MAP_SPEED.floor_D
@@ -90,6 +89,8 @@ function Player:ctor(_type)
         end
         if _type == 1 then
             self.ai = cc.uiloader:load("json/AI.json")
+            self.aiLabel = cc.uiloader:seekNodeByName(self.ai,"BitmapLabel_3")
+            self.aiLabel:setColor(cc.c3b(255,0,0))
             self:addChild(self.ai)
             if self:getScaleX() == 1 then
                 self.ai:setPosition(cc.p(-45,25))
@@ -104,20 +105,22 @@ function Player:ctor(_type)
     end
     self:addBody(cc.p(0,0),p_size,_type)
     
-    --迟钝药水
-    GameDispatcher:addListener(EventNames.EVENT_SLOWLY,handler(self,self.slowly))
-    --获得1代币
-    GameDispatcher:addListener(EventNames.EVENT_GET_TOKEN,handler(self,self.getToken))
-    --吸铁石
-    GameDispatcher:addListener(EventNames.EVENT_USE_MAGNET,handler(self,self.magnet))
-    --幻影药水
-    GameDispatcher:addListener(EventNames.EVENT_USE_PHANTOM,handler(self,self.phantom))
-    --冲刺火箭
-    GameDispatcher:addListener(EventNames.EVENT_SPRING_ROCKET,handler(self,self.springRocket))
-    --看视频或花费钻石开局冲刺
-    GameDispatcher:addListener(EventNames.EVENT_START_ROCKET,handler(self,self.startRocket))
-    --复活
-    GameDispatcher:addListener(EventNames.EVENT_ROLE_REVIVE,handler(self,self.relive))
+    if not self.m_type then
+        --迟钝药水
+        self.slowlyHandler = GameDispatcher:addListener(EventNames.EVENT_SLOWLY,handler(self,self.slowly))
+        --获得1代币
+        self.getTokenHandler = GameDispatcher:addListener(EventNames.EVENT_GET_TOKEN,handler(self,self.getToken))
+        --吸铁石
+        self.magnetHandler = GameDispatcher:addListener(EventNames.EVENT_USE_MAGNET,handler(self,self.magnet))
+        --幻影药水
+        self.phantomHandler = GameDispatcher:addListener(EventNames.EVENT_USE_PHANTOM,handler(self,self.phantom))
+        --冲刺火箭
+        self.springRocketHandler = GameDispatcher:addListener(EventNames.EVENT_SPRING_ROCKET,handler(self,self.springRocket))
+        --看视频或花费钻石开局冲刺
+        self.startRocketHandler = GameDispatcher:addListener(EventNames.EVENT_START_ROCKET,handler(self,self.startRocket))
+        --复活
+        self.reliveHandler = GameDispatcher:addListener(EventNames.EVENT_ROLE_REVIVE,handler(self,self.relive))
+    end
 
 end
 
@@ -192,53 +195,21 @@ end
 
 --上跳状态
 function Player:toJump(pos,isRunning)
---    Tools.printDebug("---------------hehehahi------------",isTwoJump)
---    if isRunning ~= MAPROOM_TYPE.Running then
-        self:toStartJump()
-        local x,y = self:getPosition()
-        
---        local move = cc.JumpTo:create(0.3,cc.p(x,pos.y+self.m_size.width*0.5+self.errorValue),Room_Size.height*0.8,1)
-----        local move2 = cc.JumpBy:create(0.15,cc.p(0,-5),5,1)
-----        local easeOut = cc.EaseCubicActionOut:create(move)
-----        local easeIn = cc.EaseCubicActionIn:create(move2)
---        local callfunc = cc.CallFunc:create(function()
---            self:toStopJump()
---        end)
---        local seq = cc.Sequence:create(move,callfunc)
---        self:runAction(seq) 
-        
---        local move = cc.MoveBy:create(0.2,cc.p(0,pos.y-y+self.m_size.width*0.5+40))
---        local move2 = cc.MoveBy:create(0.1,cc.p(0,-10))
---        local easeOut = cc.EaseCubicActionOut:create(move)
---        local easeIn = cc.EaseCubicActionIn:create(move2)
---        local callfunc = cc.CallFunc:create(function()
---            self:toStopJump()
---        end)
---        local seq = cc.Sequence:create(easeOut,easeIn,callfunc)
---        self:runAction(seq)
 
-        local _vec = self.m_body:getVelocity()
-        local _scaleX=self:getScaleX()
-        if _scaleX<0 then
-            _vec.x=self.m_vo.m_speed
-        else
-            _vec.x=-self.m_vo.m_speed
-        end
-        self:setBodyVelocity(cc.p(_vec.x,260))
-        self.jumpHandler = Tools.delayCallFunc(0.35,function()
-            self:toStopJump()
-        end)
---    else
---        self:toStartJump()
---        local x,y = self:getPosition()
---        local move = cc.MoveTo:create(0.3,cc.p(x,pos.y+self.m_size.width*0.5+30))
---        local easeOut = cc.EaseCubicActionOut:create(move)
---        local callfunc = cc.CallFunc:create(function()
---            self:toStopJump()
---        end)
---        local seq = cc.Sequence:create(easeOut,callfunc)
---        self:runAction(seq)
---    end
+    self:toStartJump()
+    local x,y = self:getPosition()
+
+    local _vec = self.m_body:getVelocity()
+    local _scaleX=self:getScaleX()
+    if _scaleX<0 then
+        _vec.x=self.m_vo.m_speed
+    else
+        _vec.x=-self.m_vo.m_speed
+    end
+    self:setBodyVelocity(cc.p(_vec.x,260))
+    self.jumpHandler = Tools.delayCallFunc(0.35,function()
+        self:toStopJump()
+    end)
 
     AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Jump_Sound)
 end
@@ -374,14 +345,6 @@ function Player:phantom(parameters)
         self:clearBuff(PLAYER_STATE.Phantom)
     end)
     
---    local limit = parameters.data.limit
---    if self.phantomCount >= limit then
---    	return
---    end
---    self.phantomCount = self.phantomCount + 1
---    if not tolua.isnull(self:getParent()) then
---        self:getParent():setPhantom(self.phantomCount)
---    end
 end
 
 --开局冲刺
@@ -412,11 +375,14 @@ end
 
 --冲刺火箭
 function Player:springRocket(parameters)
+    Tools.printDebug("----------brj========== 跳房子 火箭冲刺：")
     if self:isInState(PLAYER_STATE.Rocket) then
+        Tools.printDebug("---------1111111111111111111111111==== 跳房子 火箭冲刺：")
         return
     end
     
     if self:isInState(PLAYER_STATE.StartRocket) then
+        Tools.printDebug("---------222222222222222222222222222== 跳房子 火箭冲刺：")
         return
     end
     
@@ -429,7 +395,6 @@ function Player:springRocket(parameters)
 
     local camera,floorPos,curFloor,dis,curRoomKey
     if not tolua.isnull(self:getParent()) then
-        self:getParent():setRocket()
         camera,floorPos,curFloor,dis,curRoomKey = self:getParent():getRocketData()
     end
     local curCloseFloor = math.ceil(curFloor/10)*10
@@ -561,7 +526,6 @@ function Player:relive(parameters)
     self:addLifeNum(1)
     local camera,floorPos,curFloor,dis,curRoomKey
     if not tolua.isnull(self:getParent()) then
-        self:getParent():setRocket()
         camera,floorPos,curFloor,dis,curRoomKey = self:getParent():getRocketData()
     end
     local pos
@@ -654,10 +618,7 @@ function Player:clearAllBuff()
         end
     end
     self.m_buffArr = {}
-    self.phantomCount = 0
-    if not tolua.isnull(self:getParent()) then
-    	self:getParent():resetPhantom()
-    end
+
 end
 
 --添加buff
@@ -695,9 +656,7 @@ function Player:clearBuff(_type)
         elseif _type == PLAYER_STATE.Rocket then
             self.toRocketState = 0
             transition.stopTarget(self)
---            if not tolua.isnull(self:getParent()) then
---                self:getParent():setRocketVisible()
---            end
+
             if not tolua.isnull(self.m_rocketEffect) then
                 self.m_rocketEffect:removeFromParent(true)
             end
@@ -838,15 +797,16 @@ function Player:dispose(_isDoor)
 
     transition.stopTarget(self)
 
-    GameDispatcher:removeListenerByName(EventNames.EVENT_SLOWLY)
-    GameDispatcher:removeListenerByName(EventNames.EVENT_GET_TOKEN)
-    GameDispatcher:removeListenerByName(EventNames.EVENT_USE_MAGNET)
-    GameDispatcher:removeListenerByName(EventNames.EVENT_USE_PHANTOM)
-    GameDispatcher:removeListenerByName(EventNames.EVENT_SPRING_ROCKET)
-    GameDispatcher:removeListenerByName(EventNames.EVENT_START_ROCKET)
-    GameDispatcher:removeListenerByName(EventNames.EVENT_ROLE_REVIVE)
+    if not self.m_type then
+        GameDispatcher:removeListenerByHandle(self.slowlyHandler)
+        GameDispatcher:removeListenerByHandle(self.getTokenHandler)
+        GameDispatcher:removeListenerByHandle(self.magnetHandler)
+        GameDispatcher:removeListenerByHandle(self.phantomHandler)
+        GameDispatcher:removeListenerByHandle(self.springRocketHandler)
+        GameDispatcher:removeListenerByHandle(self.startRocketHandler)
+        GameDispatcher:removeListenerByHandle(self.reliveHandler)
+    end
     
-
     if self.m_body then
         self.m_body:removeFromWorld()
     end

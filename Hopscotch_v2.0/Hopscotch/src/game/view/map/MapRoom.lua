@@ -14,6 +14,7 @@ local Block_FRICTION = 0
 local Block_ELASTICITY = 0
 local Block_MASS = 400
 
+
 --@param1:房间编号
 --@param2:房间的配置id
 function MapRoom:ctor(_idx,_levelCon,_floorNum,dArr,gFloor)
@@ -62,7 +63,7 @@ function MapRoom:ctor(_idx,_levelCon,_floorNum,dArr,gFloor)
         self.m_type = false
     end
 
-    --房间内背景
+    --房间内地板墙壁
     self:initBlock(_roomBgVo)
     --房间装饰
     self:initOrnament(_ornaments)
@@ -128,6 +129,15 @@ function MapRoom:initBlock(_roomBgVo)
         	self.isCloseRoom = true
         else
             self.isCloseRoom = false
+            if #_roomBgVo.wallLeftRight == 1 then
+                if _roomBgVo.wallLeftRight[1].x < display.cx then
+                    self.wallDirection = OpenWallType.Right
+                else
+                    self.wallDirection = OpenWallType.Left
+                end
+            elseif #_roomBgVo.wallLeftRight == 0 then
+                self.wallDirection = OpenWallType.All
+            end
         end
     end
     if _roomBgVo.floor then
@@ -362,6 +372,11 @@ end
 --获取房间索引号
 function MapRoom:getRoomKey()
     return self.m_index
+end
+
+--获取房间开口方向
+function MapRoom:getSingleOpenWallDir()
+    return self.wallDirection
 end
 
 --是否为封闭房间

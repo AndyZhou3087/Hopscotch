@@ -62,12 +62,19 @@ MAP_ROOM_OTHER_MAX = 20
 --地图当前ZOder
 MAP_ZORDER_MAX=0
 
+OpenWallType = 
+{
+    Left = 1,
+    Right = 2,
+    All = 3,
+}
+
+
 --游戏模式
 Game_Mode = {
     Common = 1,
     Athletics = 2,
 }
-
 GAME_CONTROL = Game_Mode.Common
 
 Map_Grade = 

@@ -50,8 +50,7 @@ function MapLayer:ctor(parameters)
     self.floorPos = {}
     self.roomArr = {}
     self.specialBody = {}
-    self.phantom = {}
-    self.havePhantom = {}
+
     self.runFloorNum = RunningFloorNum
     self.isBgMove = false
     self.isMapBottom = true
@@ -96,24 +95,83 @@ function MapLayer:ctor(parameters)
     GameController.setCurPlayer(self.m_player)
     self.curRoomWidth = self:getRoomByIdx(1):getRoomWidth()
     
-    for var=1, 5 do
-        local phantom = PhantomElement.new(self:getScaleX())
-        self:addChild(phantom,MAP_ZORDER_MAX+1)
-        phantom:setVisible(false)
-        self.phantom[var] = phantom
-    end
-    
     --竞技模式
     if GAME_CONTROL == Game_Mode.Athletics then
         self.matchRole = Player.new(1)
         self:addChild(self.matchRole,MAP_ZORDER_MAX+1)
         self.matchRole:setPosition(cc.p(display.cx+200,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
+        self.aiTime = 0.3
+        self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateAIJump), self.aiTime)
     end
 
     self:setCameraMask(2)
     
     GameDispatcher:addListener(EventNames.EVENT_GAME_OVER,handler(self,self.playerDead))
 
+end
+
+--竞技模式跳跃
+function MapLayer:updateAIJump()
+    if tolua.isnull(self.matchRole) then
+        if self.m_aiHandler then
+            Scheduler.unscheduleGlobal(self.m_aiHandler)
+            self.m_aiHandler=nil
+        end
+    	return
+    end
+    local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
+    local pos
+    if self.floorPos[roomIndex+1].x then
+        pos = self.floorPos[roomIndex+1]
+    else
+        pos = self.floorPos[roomIndex+1][1]
+    end
+    
+    local _room = self:getRoomByIdx(roomIndex+1)
+    local bpx,bpy = self.matchRole:getPosition()
+    local _scaleX = self.matchRole:getScaleX()
+    if _room then
+        if _room:getRoomCloseValue() then
+            self.matchRole:toJump()
+            self.aiTime = 1
+        else
+            if _room:getSingleOpenWallDir() == OpenWallType.Left then
+                if bpx > display.cx then
+                    self.matchRole:toJump()
+                    self.aiTime = 0.6
+                else
+                    if _scaleX == -1 then
+                        self.matchRole:toJump()
+                        self.aiTime = 1
+                    else
+                        self.matchRole:toJump()
+                        self.aiTime = 0.3
+                    end
+                end
+            elseif _room:getSingleOpenWallDir() == OpenWallType.Right then
+                if bpx < display.cx then
+                    self.matchRole:toJump()
+                    self.aiTime = 0.6
+                else
+                    if _scaleX == 1 then
+                        self.matchRole:toJump()
+                        self.aiTime = 1
+                    else
+                        self.matchRole:toJump()
+                        self.aiTime = 0.3
+                    end
+                end
+            else
+                self.matchRole:toJump()
+                self.aiTime = 0.2
+            end
+        end
+    end
+    if self.m_aiHandler then
+        Scheduler.unscheduleGlobal(self.m_aiHandler)
+        self.m_aiHandler=nil
+    end
+    self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateAIJump), self.aiTime)
 end
 
 --触摸
@@ -779,7 +837,7 @@ function MapLayer:onEnterFrame(dt)
     
     
 --========================--竞技模式=================================
-    if self.matchRole then
+    if not tolua.isnull(self.matchRole) then
         local bpx,bpy = self.matchRole:getPosition()
         self.matchRole:update(dt,bpx,bpy)
         
@@ -793,14 +851,30 @@ function MapLayer:onEnterFrame(dt)
         local _veloc = _body:getVelocity()
         local _scaleX = self.matchRole:getScaleX()
         local _add = -1*_scaleX/math.abs(_scaleX)  --因为人物默认是向左的，所以乘以-1
-        --        if self.matchRole:getJump() then
-        --            self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y+_size.height*0.5),cc.p(_p.x,_p.y+_size.height*0.5-Raycast_DisY))--起始坐标和结束坐标(是指发出的一条射线)
-        --        else
-        --            self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y-_size.height*0.5),cc.p(_p.x,_p.y-_size.height*0.5-Raycast_DisY))
-        --        end
 
         if not self.matchRole:isInState(PLAYER_STATE.Rocket) then
             self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y-_size.height*0.25),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y-_size.height*0.25))
+        end
+               
+        local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
+        local pos = self.floorPos[roomIndex] 
+        if bpx <= pos.x-_size.width*0.5 then
+            if self.matchRole then
+                self.matchRole:dispose()
+            end
+            if self.m_aiHandler then
+                Scheduler.unscheduleGlobal(self.m_aiHandler)
+                self.m_aiHandler=nil
+            end
+        end
+        if bpx >= pos.x+display.right+_size.width*0.5 then
+            if self.matchRole then
+                self.matchRole:dispose()
+            end
+            if self.m_aiHandler then
+                Scheduler.unscheduleGlobal(self.m_aiHandler)
+                self.m_aiHandler=nil
+            end
         end
     end
     
@@ -880,11 +954,10 @@ function MapLayer:onEnterFrame(dt)
     end
     
     
-    --=====================幻影效果
+    --=====================幻影效果===================
     if self.phantomShow then
 --        Tools.printDebug("----brj hopscotch 幻影效果：",self.phantomShow,math.abs(bpx - 20),self.lastPlsyerX)
         if not self.lastPlsyerX or math.abs(bpx - self.lastPlsyerX) > 20 then
---            Tools.printDebug("----brj ?????????????????????????：",self.phantomShow,self.lastPlsyerX)
             self.lastPlsyerX = bpx
             local sprite = display.newSprite(RoleConfig[GameDataManager.getFightRole()].roleImg):addTo(self)
             local pos = self.m_camera:convertToNodeSpace(cc.p(bpx,bpy))
@@ -991,26 +1064,6 @@ function MapLayer:onEnterFrame(dt)
         self.m_player:changeSpeed(MAP_SPEED.floor_S)
     end
     
-    if self.m_player:getJump() and self.curRoomType == MAPROOM_TYPE.Running then
-        if self.phantom and #self.phantom > 0 then
-            for key, var in pairs(self.phantom) do
-                local pos=cc.p(self.m_player:getPositionX(),17)
-                if self.m_player:getPositionY()+self.m_player:getSize().height/2.0>pos.y then
-                    var:add(self.m_player:getPositionY())
-                end
-            end
-        end
-    end
-    
-    --幻影角色
-    if #self.phantom > 0 then
-        local to=cc.p(self.m_player:getPosition())
-        for key, var in pairs(self.phantom) do
-            if not tolua.isnull(var) then
-                var:follow(to,key)
-            end
-        end
-    end
     
     --双向倾斜时，当移出镜头时，移除右向缓存房间
     if #self.m_rightRooms > 0 then
@@ -1059,7 +1112,6 @@ function MapLayer:onEnterFrame(dt)
     
     --开局冲刺火箭
     if self.rocketFloor and GameDataManager.getPoints() == self.rocketFloor and self.m_player:isInState(PLAYER_STATE.StartRocket) then
-    	--
         self:toStopStartRocket()
     end
     
@@ -1342,19 +1394,7 @@ function MapLayer:CoreLogic()
     local bpx,bpy = self.m_player:getPosition()
     local cmx,cmy = self.m_camera:getPosition()
     local roomIndex = math.ceil((bpy-self.bottomHeight)/Room_Size.height)
-    --幻影角色
-    if self.phantonFollow then
-        if self.phantom and #self.phantom > 0 then
-            self.phantonFollow = false
-            local _room = self:getRoomByIdx(roomIndex)
-            for key, var in pairs(self.phantom) do
-                local pos=cc.p(self.m_player:getPositionX(),17)
-                if bpy+_size.height/2.0>pos.y then
-                    var:add(_room:getPositionY()+17+_size.height/2.0)
-                end
-            end
-        end
-    end
+
 --    Tools.printDebug("----------brj 当前room：111111111111111",self.m_lastRoomIdx,roomIndex)
     if self.m_lastRoomIdx ~= roomIndex then
         local _room
@@ -1427,17 +1467,6 @@ function MapLayer:CoreLogic()
         end
     end
 
-    if self.curRoomType == MAPROOM_TYPE.Running then
-        if self.phantom and #self.phantom > 0 then
-            for key, var in pairs(self.phantom) do
-                local pos=cc.p(self.m_player:getPositionX(),17)
-                if self.m_player:getPositionY()+self.m_player:getSize().height/2.0>pos.y then
-                    var:add(self.m_player:getPositionY())
-                end
-            end
-        end
-    end
-
     local _room,rKey = self:getOtherRoomByX(bpx,self.roomKey)
     if _room then
         if self.curRoomType == MAPROOM_TYPE.Running then
@@ -1464,22 +1493,6 @@ function MapLayer:playerDead()
     self.isCollision = false
     self.m_player:selfDead()
 end
-
---死亡时判断下方三层内宽度是否大于此层
---function MapLayer:deadFloor(_type)
---	if _type == 1 then
---        local size = self.m_player:getSize()
---        local curRoomWidth = self:getRoomByIdx(self.jumpFloorNum):getRoomWidth()
---        local room1Width = self:getRoomByIdx(self.jumpFloorNum-1):getRoomWidth()
---        local room2Width = self:getRoomByIdx(self.jumpFloorNum-2):getRoomWidth()
---        if room1Width >= curRoomWidth + size.width*2 or room2Width >= curRoomWidth + size.width*2 then
---        	return true
---        else
---            return false
---        end
---    
---	end
---end
 
 --双向横跑时根据编号从右边缓存中取出房间
 function MapLayer:getRightRoomByIdx(_roomIndx)
@@ -1549,26 +1562,9 @@ function MapLayer:toJump()
     self.m_player:toJump(pos,self.curRoomType)
 end
 
---设置幻影角色
-function MapLayer:setPhantom(count)
-    self.havePhantom[count] = count
-    for key, var in pairs(self.phantom) do
-    	if key == count then
-            var:setVisible(true)
-    	end
-    end
-end
-
 --设置幻影
 function MapLayer:setPhantomShow(enable)
     self.phantomShow = enable
-end
-
---设置火箭对应幻影
-function MapLayer:setRocket()
-    for key, var in pairs(self.havePhantom) do
-		self.phantom[var]:setVisible(false)
-	end
 end
 
 --火箭对象
@@ -1676,11 +1672,6 @@ function MapLayer:toRocketRunningLogic(RocketState,scaleX,curRoomKey)
     end
 end
 
-function MapLayer:setRocketVisible()
-    for key, var in pairs(self.havePhantom) do
-        self.phantom[var]:setVisible(true)
-    end
-end
 
 --获取摄像机对象，楼层坐标组，当前楼层
 function MapLayer:getRocketData()
@@ -1996,12 +1987,6 @@ function MapLayer:toStopStartRocket()
 --    self.m_camera:setPosition(cc.p(pos.x,pos.y-self.bottomHeight))
 end
 
---重置幻影角色
-function MapLayer:resetPhantom()
-    for key, var in pairs(self.phantom) do
-        var:setVisible(false)
-    end
-end
 
 --销毁特殊刚体
 function MapLayer:disposeSpecial(_typeNum)
@@ -2036,6 +2021,11 @@ function MapLayer:dispose(parameters)
     if self.m_player then
         self.m_player:dispose()
     end
+    
+    if not tolua.isnull(self.matchRole) then
+        self.matchRole:dispose()
+    end
+    
     
     if self.bgNode then
     	self.bgNode:dispose()
@@ -2105,6 +2095,11 @@ function MapLayer:dispose(parameters)
     if self.delayHandler then
         Scheduler.unscheduleGlobal(self.delayHandler)
         self.delayHandler=nil
+    end
+    
+    if self.m_aiHandler then
+        Scheduler.unscheduleGlobal(self.m_aiHandler)
+        self.m_aiHandler=nil
     end
     
     GameDataManager.resetRevive()
