@@ -131,40 +131,46 @@ function MapLayer:updateAIJump()
     local bpx,bpy = self.matchRole:getPosition()
     local _scaleX = self.matchRole:getScaleX()
     if _room then
-        if _room:getRoomCloseValue() then
-            self.matchRole:toJump()
-            self.aiTime = 1
-        else
-            if _room:getSingleOpenWallDir() == OpenWallType.Left then
-                if bpx > display.cx then
-                    self.matchRole:toJump()
-                    self.aiTime = 0.6
-                else
-                    if _scaleX == -1 then
-                        self.matchRole:toJump()
-                        self.aiTime = 1
-                    else
-                        self.matchRole:toJump()
-                        self.aiTime = 0.3
-                    end
-                end
-            elseif _room:getSingleOpenWallDir() == OpenWallType.Right then
-                if bpx < display.cx then
-                    self.matchRole:toJump()
-                    self.aiTime = 0.6
-                else
-                    if _scaleX == 1 then
-                        self.matchRole:toJump()
-                        self.aiTime = 1
-                    else
-                        self.matchRole:toJump()
-                        self.aiTime = 0.3
-                    end
-                end
-            else
+        local roomType = _room:getCurRoomType()
+        if roomType == MAPROOM_TYPE.Common or roomType == MAPROOM_TYPE.Lean then
+            if _room:getRoomCloseValue() then
                 self.matchRole:toJump()
-                self.aiTime = 0.2
+                self.aiTime = 1
+            else
+                if _room:getSingleOpenWallDir() == OpenWallType.Left then
+                    if bpx > pos.x + display.cx then
+                        self.matchRole:toJump()
+                        self.aiTime = 0.6
+                    else
+                        if _scaleX == -1 then
+                            self.matchRole:toJump()
+                            self.aiTime = 1
+                        else
+                            self.matchRole:toJump()
+                            self.aiTime = 0.3
+                        end
+                    end
+                elseif _room:getSingleOpenWallDir() == OpenWallType.Right then
+                    if bpx < pos.x + display.cx then
+                        self.matchRole:toJump()
+                        self.aiTime = 0.6
+                    else
+                        if _scaleX == 1 then
+                            self.matchRole:toJump()
+                            self.aiTime = 1
+                        else
+                            self.matchRole:toJump()
+                            self.aiTime = 0.3
+                        end
+                    end
+                else
+                    self.matchRole:toJump()
+                    self.aiTime = 0.2
+                end
             end
+        elseif roomType == MAPROOM_TYPE.Special then
+            local left,right = _room:getSpeicalSteel()
+            
         end
     end
     if self.m_aiHandler then

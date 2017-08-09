@@ -29,7 +29,23 @@ function MapRoom:ctor(_idx,_levelCon,_floorNum,dArr,gFloor)
     self.m_floorNum = _floorNum
     self.roomType = _levelCon.roomType
     self.roomDistance = _levelCon.direction
+    self.speLeft = false
+    self.speRight = false
     
+    for var=1, #_levelCon.left do
+        local cNum = _levelCon.left[var]
+        if cNum == _idx then
+        	self.speLeft = true
+        	break
+        end
+    end
+    for var=1, #_levelCon.right do
+        local cNum = _levelCon.right[var]
+        if cNum == _idx then
+            self.speRight = true
+            break
+        end
+    end
     
 --    Tools.printDebug("--------brj 特殊钢架：",_floorNum,_idx,_levelCon.roomType == MAPROOM_TYPE.Special)
     if _levelCon.roomType == MAPROOM_TYPE.Special and _idx == 10 then
@@ -382,6 +398,11 @@ end
 --是否为封闭房间
 function MapRoom:getRoomCloseValue()
     return self.isCloseRoom
+end
+
+--获取钢架层左右两边楼层
+function MapRoom:getSpeicalSteel()
+    return self.speLeft,self.speRight
 end
 
 --获取当前房间所属楼层总层数
