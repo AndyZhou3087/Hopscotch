@@ -99,6 +99,7 @@ function MapLayer:ctor(parameters)
     if GAME_CONTROL == Game_Mode.Athletics then
         self.matchRole = Player.new(1)
         self:addChild(self.matchRole,MAP_ZORDER_MAX+1)
+        local _size = self.matchRole:getSize()
         self.matchRole:setPosition(cc.p(display.cx+200,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
         self.aiTime = 0.3
         self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateAIJump), self.aiTime)
@@ -170,7 +171,36 @@ function MapLayer:updateAIJump()
             end
         elseif roomType == MAPROOM_TYPE.Special then
             local left,right = _room:getSpeicalSteel()
-            
+            if right then
+                if bpx > pos.x + display.cx then
+                    self.matchRole:toJump()
+                    self.aiTime = 0.6
+                else
+                    if _scaleX == -1 then
+                        self.matchRole:toJump()
+                        self.aiTime = 3
+                    else
+                        self.matchRole:toJump()
+                        self.aiTime = 0.3
+                    end
+                end
+            elseif left then
+                if bpx < pos.x + display.cx then
+                    self.matchRole:toJump()
+                    self.aiTime = 0.6
+                else
+                    if _scaleX == 1 then
+                        self.matchRole:toJump()
+                        self.aiTime = 1
+                    else
+                        self.matchRole:toJump()
+                        self.aiTime = 0.3
+                    end
+                end
+            else
+                self.matchRole:toJump()
+                self.aiTime = 0.2
+            end
         end
     end
     if self.m_aiHandler then
@@ -828,25 +858,12 @@ end
 function MapLayer:onEnterFrame(dt)
     --移动金币
     GameController.attract()
-  
-    if tolua.isnull(self.m_player) then
-        return
-    end
-
-    if tolua.isnull(self.m_player.m_body) then
-        return
-    end
-
-    if self.m_player:isDead() then
-        return
-    end
     
-    
---========================--竞技模式=================================
+    --========================--竞技模式=================================
     if not tolua.isnull(self.matchRole) then
         local bpx,bpy = self.matchRole:getPosition()
         self.matchRole:update(dt,bpx,bpy)
-        
+
         local m_scaleX=self.matchRole:getScaleX()
         local velo=self.matchRole:getBody():getVelocity()
         self.matchRole:setVelocity(cc.p(-m_scaleX/math.abs(m_scaleX)*self.matchRole:getSpeed(),velo.y))
@@ -858,10 +875,11 @@ function MapLayer:onEnterFrame(dt)
         local _scaleX = self.matchRole:getScaleX()
         local _add = -1*_scaleX/math.abs(_scaleX)  --因为人物默认是向左的，所以乘以-1
 
-        if not self.matchRole:isInState(PLAYER_STATE.Rocket) then
-            self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y-_size.height*0.25),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y-_size.height*0.25))
-        end
-               
+--        if not self.matchRole:isInState(PLAYER_STATE.Rocket) then
+--            Tools.printDebug("----------brj 竞技模式射线检测2222222222：",_p.x+_add*(_size.width*0.5+Raycast_DisX),762.5)
+            self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y))
+--        end
+
         local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
         local pos = self.floorPos[roomIndex] 
         if bpx <= pos.x-_size.width*0.5 then
@@ -884,8 +902,19 @@ function MapLayer:onEnterFrame(dt)
         end
     end
     
-    
 --===============================普通模式===================================
+    if tolua.isnull(self.m_player) then
+        return
+    end
+
+    if tolua.isnull(self.m_player.m_body) then
+        return
+    end
+
+    if self.m_player:isDead() then
+        return
+    end
+
     local bpx,bpy = self.m_player:getPosition()
     local _size = self.m_player:getSize()
     self.m_player:update(dt,bpx,bpy)
@@ -1163,12 +1192,11 @@ function MapLayer:collisionBeginCallBack(parameters)
     local bodyB = parameters:getShapeB():getBody()
     local tagA = bodyA:getTag()
     local tagB = bodyB:getTag()
-    --    Tools.printDebug("chjh beginCallBack bodyA,bodyB",tostring(bodyA),tostring(bodyB))
     local player,playerBP,playerTag,_size,playerBody
     local obstacle,obstacleBP,obstacleTag,obstacleBody
     local obstacleS,obstacleScale
     local obstacleOff
-
+    
     if tagA == ELEMENT_TAG.PLAYER_TAG then
         player = bodyA:getNode()
         playerBP = bodyA:getPosition()
@@ -1195,19 +1223,21 @@ function MapLayer:collisionBeginCallBack(parameters)
 
         obstacleOff=parameters:getShapeA():getOffset()
     end
+--    Tools.printDebug("------------brj 竞技模式碰撞：",tagA,tagB,player:getRoleDes())
+    
     if tolua.isnull(bodyA) or tolua.isnull(bodyB) then
+        return true
+    end
+    
+    if tolua.isnull(obstacle) then
         return true
     end
     
     if (not player) or player:isDead() then
         return true
     end
-    if tolua.isnull(obstacle) then
-        return false
-    end
-    
-    if self.m_player:isInState(PLAYER_STATE.Rocket) then
-    	return true
+    if player:isInState(PLAYER_STATE.Rocket) or player:isInState(PLAYER_STATE.StartRocket) then
+        return true
     end
     
     if obstacleTag == ELEMENT_TAG.FLOOR then
@@ -1332,37 +1362,6 @@ function MapLayer:rayCastFunc(_world,_p1,_p2,_p3)
     return true
 end
 
---竞技对手左右移动，碰撞反射，从人物中心向下或向上发射一个比自身一半多 Raycast_DisY 像素的探测射线，进行检测有无障碍物
-function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
-    
-    local _body = _p1.shape:getBody()
-    local _bnode = _body:getNode()
-    local _tag = _body:getTag()
-    local _scaleX = self.matchRole:getScaleX()
-    local playerBP=self.matchRole:getBody():getPosition()
-    local obstacleBP=_body:getPosition()
-
-    if (not _bnode) or _tag==ELEMENT_TAG.PLAYER_TAG_1 then
-        return true
-    end
-    
-    if _tag==ELEMENT_TAG.WALLLEFT or _tag==ELEMENT_TAG.WALLRIGHT or _tag==ELEMENT_TAG.SPECIAL_TAG then
-        if not tolua.isnull(_bnode) then
-            local vel=self.matchRole:getBody():getVelocity()
-            local _size = self.matchRole:getSize()
-            if playerBP.x+_size.width*0.5<obstacleBP.x then
-                self.matchRole:setVelocity(cc.p(self.matchRole:getSpeed(),vel.y))
-                self.matchRole:setScaleX(math.abs(_scaleX))
-            else
-                self.matchRole:setVelocity(cc.p(-self.matchRole:getSpeed(),vel.y))
-                self.matchRole:setScaleX(-math.abs(_scaleX))
-            end
-       end
-    end
-
-    return true
-end
-
 function MapLayer:rayCastFuncX(_world,_p1,_p2,_p3)
 
     local _body = _p1.shape:getBody()
@@ -1388,6 +1387,42 @@ function MapLayer:rayCastFuncX(_world,_p1,_p2,_p3)
                 self.m_player:setScaleX(-math.abs(_scaleX))
             end
        end
+    end
+
+    return true
+end
+
+--竞技对手左右移动，碰撞反射，从人物中心向左或向右发射一个比自身一半多 Raycast_DisY 像素的探测射线，进行检测有无障碍物
+function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
+
+    local _body = _p1.shape:getBody()
+    local _bnode = _body:getNode()
+    local _tag = _body:getTag()
+    local _scaleX = self.matchRole:getScaleX()
+    local playerBP=self.matchRole:getBody():getPosition()
+    local obstacleBP=_body:getPosition()
+    Tools.printDebug("----------brj 竞技模式检测：111111111111111",_tag,ELEMENT_TAG.SPECIAL_TAG)
+    if (not _bnode) or _tag==ELEMENT_TAG.PLAYER_TAG_1 then
+        return true
+    end
+    
+    if _tag==ELEMENT_TAG.WALLLEFT or _tag==ELEMENT_TAG.WALLRIGHT or _tag==ELEMENT_TAG.SPECIAL_TAG then
+        if not tolua.isnull(_bnode) then
+            local vel=self.matchRole:getBody():getVelocity()
+            local _size = self.matchRole:getSize()
+            if playerBP.x+_size.width*0.5<obstacleBP.x then
+                self.matchRole:setVelocity(cc.p(self.matchRole:getSpeed(),vel.y))
+                self.matchRole:setScaleX(math.abs(_scaleX))
+            else
+                self.matchRole:setVelocity(cc.p(-self.matchRole:getSpeed(),vel.y))
+                self.matchRole:setScaleX(-math.abs(_scaleX))
+            end
+        end
+        if _tag==ELEMENT_TAG.SPECIAL_TAG then
+            if not tolua.isnull(_bnode) then
+                _bnode:collision()
+            end
+        end
     end
 
     return true

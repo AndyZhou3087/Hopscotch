@@ -14,48 +14,6 @@ local Speed_Max = 600   --人物最大速度
 local DustRepair=5
 
 
-Player._FILTERS = {
-
-        -- custom
-        {"CUSTOM"},
-
-        -- {"CUSTOM", json.encode({frag = "Shaders/example_Flower.fsh",
-        --                  center = {display.cx, display.cy},
-        --                  resolution = {480, 320}})},
-
-        {{"CUSTOM", "CUSTOM"},
-            {json.encode({frag = "Shaders/example_Blur.fsh",
-                shaderName = "blurShader",
-                resolution = {480,320},
-                blurRadius = 10,
-                sampleNum = 5}),
-            json.encode({frag = "Shaders/example_sepia.fsh",
-                shaderName = "sepiaShader",})}},
-
-        -- colors
-        {"GRAY",{0.2, 0.3, 0.5, 0.1}},
-        {"RGB",{1, 0.5, 0.3}},
-        {"HUE", {90}},
-        {"BRIGHTNESS", {0.3}},
-        {"SATURATION", {0}},
-        {"CONTRAST", {2}},
-        {"EXPOSURE", {2}},
-        {"GAMMA", {2}},
-        {"HAZE", {0.1, 0.2}},
-        --{"SEPIA", {}},
-        -- blurs
-        {"GAUSSIAN_VBLUR", {7}},
-        {"GAUSSIAN_HBLUR", {7}},
-        {"ZOOM_BLUR", {4, 0.7, 0.7}},
-        {"MOTION_BLUR", {5, 135}},
-        -- others
-        {"SHARPEN", {1, 1}},
-        {{"GRAY", "GAUSSIAN_VBLUR", "GAUSSIAN_HBLUR"}, {nil, {10}, {10}}},
-        {{"BRIGHTNESS", "CONTRAST"}, {{0.1}, {4}}},
-        {{"HUE", "SATURATION", "BRIGHTNESS"}, {{240}, {1.5}, {-0.4}}},
-}
-
-
 ---人物类
 function Player:ctor(_type)
     Player.super.ctor(self)
@@ -69,6 +27,11 @@ function Player:ctor(_type)
     self.m_jump = false
 
     self.m_curModle = GameDataManager.getFightRole()
+    if _type == 1 then
+    	local ranId = math.random(1,#RoleConfig)
+        self.m_curModle = ranId
+    end
+    self.m_roleDes = RoleConfig[self.m_curModle].roleDes
     local modle = RoleConfig[self.m_curModle].armatureName
     local res = RoleConfig[self.m_curModle].roleImg
     local jump = RoleConfig[self.m_curModle].jumpName
@@ -121,23 +84,6 @@ function Player:ctor(_type)
         --复活
         self.reliveHandler = GameDispatcher:addListener(EventNames.EVENT_ROLE_REVIVE,handler(self,self.relive))
     end
-
-end
-
-
-function Player:_showFilter(res)
-    if self._filterSprite then
-        self._filterSprite:removeSelf()
-        self._filterSprite = nil
-    end
-    local __curFilter = Player._FILTERS[12]
-    local __filters, __params = unpack(__curFilter)
-    if __params and #__params == 0 then
-        __params = nil
-    end
-    self.m_armature = display.newFilteredSprite(res, __filters, __params)
---        :align(display.CENTER, display.cx, display.cy)
-        :addTo(self)
 
 end
 
@@ -757,6 +703,11 @@ end
 --获取误差高度
 function Player:getErrorValue()
     return self.errorValue
+end
+
+--获取角色名
+function Player:getRoleDes()
+    return self.m_roleDes
 end
 
 function Player:toPlay(_actionName)

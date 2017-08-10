@@ -32,20 +32,26 @@ function MapRoom:ctor(_idx,_levelCon,_floorNum,dArr,gFloor)
     self.speLeft = false
     self.speRight = false
     
-    for var=1, #_levelCon.left do
-        local cNum = _levelCon.left[var]
-        if cNum == _idx then
-        	self.speLeft = true
-        	break
+    if _levelCon.left then
+        for var=1, #_levelCon.left do
+            local cNum = _levelCon.left[var]
+            if cNum == _idx then
+                self.speLeft = true
+                break
+            end
         end
     end
-    for var=1, #_levelCon.right do
-        local cNum = _levelCon.right[var]
-        if cNum == _idx then
-            self.speRight = true
-            break
+    
+    if _levelCon.right then
+        for var=1, #_levelCon.right do
+            local cNum = _levelCon.right[var]
+            if cNum == _idx then
+                self.speRight = true
+                break
+            end
         end
     end
+    
     
 --    Tools.printDebug("--------brj 特殊钢架：",_floorNum,_idx,_levelCon.roomType == MAPROOM_TYPE.Special)
     if _levelCon.roomType == MAPROOM_TYPE.Special and _idx == 10 then
