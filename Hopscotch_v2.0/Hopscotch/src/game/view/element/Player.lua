@@ -155,6 +155,7 @@ function Player:toJump(pos,isRunning)
     self:setBodyVelocity(cc.p(_vec.x,260))
     self.jumpHandler = Tools.delayCallFunc(0.35,function()
         self:toStopJump()
+        self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
     end)
 
     AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Jump_Sound)
@@ -469,6 +470,7 @@ function Player:relive(parameters)
     GameController.resumeGame()
     self:createModle(self.m_modle)
     self.m_isDead = false
+    self.m_body:setCollisionBitmask(0x03)
     self:addLifeNum(1)
     local camera,floorPos,curFloor,dis,curRoomKey
     if not tolua.isnull(self:getParent()) then
@@ -500,6 +502,8 @@ function Player:selfDead()
     if not self.m_armature:isVisible() then
         return
     end
+    
+    self.m_body:setCollisionBitmask(0x04)
     self.m_vo.m_lifeNum = self.m_vo.m_lifeNum - 1
     Tools.printDebug("--------brj 角色死亡：",self.m_vo.m_lifeNum)
     if not self.m_isDead and self.m_vo.m_lifeNum <= 0 then
@@ -513,6 +517,7 @@ function Player:selfDead()
             if not tolua.isnull(self:getParent()) then
                 self:getParent():backOriginFunc()
             end
+            self.m_body:setCollisionBitmask(0x03)
         else
             self:stopAllActions()
             self.m_armature:stopAllActions()

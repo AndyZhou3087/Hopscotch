@@ -23,6 +23,7 @@ function SpecialElement:ctor(arr,lineSprite,type)
     	dis = 12
     else
         dis = -12
+        self.m_img:setScaleX(-1)
     end
     local shake = cc.MoveBy:create(1.5,cc.p(dis,0))
     local shake2 = cc.MoveBy:create(1.5,cc.p(-dis,0))

@@ -18,6 +18,8 @@ local moveSpeed = 120
 --角色横跑第一层的理想化x坐标
 local runFirstX = 418
 
+local spaceSpeed = 150
+
 math.randomseed(os.time())   --初始化随机种子
 
 --当前场景状态
@@ -136,71 +138,60 @@ function MapLayer:updateAIJump()
         if roomType == MAPROOM_TYPE.Common or roomType == MAPROOM_TYPE.Lean then
             if _room:getRoomCloseValue() then
                 self.matchRole:toJump()
-                self.aiTime = 1
+                self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
             else
                 if _room:getSingleOpenWallDir() == OpenWallType.Left then
                     if bpx > pos.x + display.cx then
                         self.matchRole:toJump()
-                        self.aiTime = 0.6
+                        self.aiTime = 0.6*spaceSpeed/self.matchRole:getSpeed()
                     else
                         if _scaleX == -1 then
                             self.matchRole:toJump()
-                            self.aiTime = 1
+                            self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
                         else
                             self.matchRole:toJump()
-                            self.aiTime = 0.3
+                            self.aiTime = 0.2*spaceSpeed/self.matchRole:getSpeed()
                         end
                     end
                 elseif _room:getSingleOpenWallDir() == OpenWallType.Right then
                     if bpx < pos.x + display.cx then
                         self.matchRole:toJump()
-                        self.aiTime = 0.6
+                        self.aiTime = 0.6*spaceSpeed/self.matchRole:getSpeed()
                     else
                         if _scaleX == 1 then
                             self.matchRole:toJump()
-                            self.aiTime = 1
+                            self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
                         else
                             self.matchRole:toJump()
-                            self.aiTime = 0.3
+                            self.aiTime = 0.2*spaceSpeed/self.matchRole:getSpeed()
                         end
                     end
                 else
                     self.matchRole:toJump()
-                    self.aiTime = 0.2
+                    self.aiTime = 0.15*spaceSpeed/self.matchRole:getSpeed()
                 end
             end
         elseif roomType == MAPROOM_TYPE.Special then
-            local left,right = _room:getSpeicalSteel()
-            if right then
-                if bpx > pos.x + display.cx then
-                    self.matchRole:toJump()
-                    self.aiTime = 0.6
-                else
-                    if _scaleX == -1 then
-                        self.matchRole:toJump()
-                        self.aiTime = 1
-                    else
-                        self.matchRole:toJump()
-                        self.aiTime = 0.3
-                    end
-                end
-            elseif left then
-                if bpx < pos.x + display.cx then
-                    self.matchRole:toJump()
-                    self.aiTime = 0.6
-                else
-                    if _scaleX == 1 then
-                        self.matchRole:toJump()
-                        self.aiTime = 1
-                    else
-                        self.matchRole:toJump()
-                        self.aiTime = 0.3
-                    end
-                end
-            else
-                self.matchRole:toJump()
-                self.aiTime = 0.2
-            end
+--            local left,right = _room:getSpeicalSteel()
+--            if (roomIndex+1)%10 == 1 then
+--                if right then
+--                    if _scaleX == -1 then
+--                        self.matchRole:toJump()
+--                        self.aiTime = 0.3
+--                    end
+--                elseif left then
+--                    if _scaleX == 1 then
+--                        self.matchRole:toJump()
+--                        self.aiTime = 0.3
+--                    end
+--                else
+--                    self.matchRole:toJump()
+--                    self.aiTime = 0.2
+--                end
+--            else
+--                self.matchRole:toJump()
+--                self.aiTime = 100
+--            end
         end
     end
     if self.m_aiHandler then
@@ -874,11 +865,13 @@ function MapLayer:onEnterFrame(dt)
         local _veloc = _body:getVelocity()
         local _scaleX = self.matchRole:getScaleX()
         local _add = -1*_scaleX/math.abs(_scaleX)  --因为人物默认是向左的，所以乘以-1
+        
+        self.m_physicWorld:rayCast(handler(self,self.rayCastMatchFunc),cc.p(_p.x,_p.y-_size.height*0.5),cc.p(_p.x,_p.y-_size.height*0.5-Raycast_DisY))
 
---        if not self.matchRole:isInState(PLAYER_STATE.Rocket) then
+        if not self.matchRole:isInState(PLAYER_STATE.Rocket) and not self.matchRole:isInState(PLAYER_STATE.StartRocket) then
 --            Tools.printDebug("----------brj 竞技模式射线检测2222222222：",_p.x+_add*(_size.width*0.5+Raycast_DisX),762.5)
             self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y))
---        end
+        end
 
         local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
         local pos = self.floorPos[roomIndex] 
@@ -1279,9 +1272,12 @@ function MapLayer:collisionBeginCallBack(parameters)
        if not tolua.isnull(obstacle) then
             local vel=self.m_player:getBody():getVelocity()
             local _size = self.m_player:getSize()
+            local _scaleX = self.m_player:getScaleX()
             if playerBP.y+_size.height<=obstacleBP.y then
-                self:playerDead()
-                return false
+                if playerBP.x+_size.width*0.5 >= obstacleBP.x-8 and _scaleX == -1 or (playerBP.x-_size.width*0.5 <= obstacleBP.x+8 and _scaleX == 1) then
+                    self:playerDead()
+                    return false
+                end
             end
             if playerBP.x+_size.width*0.5<obstacleBP.x then
                 player:setVelocity(cc.p(player:getSpeed(),vel.y))
@@ -1422,7 +1418,65 @@ function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
             if not tolua.isnull(_bnode) then
                 _bnode:collision()
             end
+--            local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
+--            local _room = self:getRoomByIdx(roomIndex+1)
+--            if _room then
+--                local left,right = _room:getSpeicalSteel()
+--                if right then
+--                    if _scaleX == -1 then
+--                        self.matchRole:toJump()
+--                        self.aiTime = 0.3
+--                    end
+--                elseif left then
+--                    if _scaleX == 1 then
+--                        self.matchRole:toJump()
+--                        self.aiTime = 0.3
+--                    end
+--                else
+--                    self.matchRole:toJump()
+--                    self.aiTime = 0.2
+--                end
+--            end
+--            if self.m_aiHandler then
+--                Scheduler.unscheduleGlobal(self.m_aiHandler)
+--                self.m_aiHandler=nil
+--            end
+--            self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateAIJump), self.aiTime)
         end
+    end
+
+    return true
+end
+
+function MapLayer:toMatchRoleJump(parameters)
+    self.matchRole:toJump()
+end
+
+--竞技对手左右移动，碰撞反射，从人物中心向上或向下发射一个比自身一半多 Raycast_DisY 像素的探测射线，进行检测有无障碍物
+function MapLayer:rayCastMatchFunc(_world,_p1,_p2,_p3)
+    local _body = _p1.shape:getBody()
+    local _bnode = _body:getNode()
+    local _tag = _body:getTag()
+    local _vo = self.matchRole:getVo()
+    local _hitP = cc.p(_p1.ended.x,_p1.ended.y)
+
+    if tolua.isnull(_bnode) then
+        return false
+    end
+    if _tag==ELEMENT_TAG.PLAYER_TAG_1 then
+        return true
+    end
+
+    if _tag == ELEMENT_TAG.FLOOR then
+        local _size = self.matchRole:getSize()
+        local bpx,bpy = self.matchRole:getPosition()
+        local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
+        if not self.matchRole:getJump() and not self.matchRole:isInState(PLAYER_STATE.Rocket) and not self.matchRole:isInState(PLAYER_STATE.StartRocket)then
+            local floorPos = self.floorPos[roomIndex]
+            self.matchRole:setPosition(cc.p(bpx,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
+        end
+
+        return true
     end
 
     return true
