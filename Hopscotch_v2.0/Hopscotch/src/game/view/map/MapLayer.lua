@@ -178,7 +178,7 @@ function MapLayer:updateAIJump()
                 else
                     if _scaleX == -1 then
                         self.matchRole:toJump()
-                        self.aiTime = 3
+                        self.aiTime = 1
                     else
                         self.matchRole:toJump()
                         self.aiTime = 0.3
@@ -806,18 +806,18 @@ function MapLayer:createSteels(_type,_y)
     line_right:setScaleY(8.5-(self.m_levelCon.right[1]-1))
     line_right:setCameraMask(2)
     --钢架人
-    local steel1 = SpecialElement.new(self.m_levelCon.left,line_left)
+    local steel1 = SpecialElement.new(self.m_levelCon.left,line_left,1)
     self:addChild(steel1,self.m_curZOrder)
     steel1:setAnchorPoint(cc.p(0,0))
     local size = steel1:getCascadeBoundingBox().size
     local steelY = (self.m_levelCon.left[1]-1)*Room_Size.height
     steel1:setPosition(cc.p(self._x+self.m_levelCon.lineX[1]-size.width*0.5-15,size.height*0.5+16+_y+steelY))
-    local steel2 = SpecialElement.new(self.m_levelCon.right,line_right)
+    local steel2 = SpecialElement.new(self.m_levelCon.right,line_right,2)
     self:addChild(steel2,self.m_curZOrder)
     steel2:setAnchorPoint(cc.p(0,0))
-    steel2:setScaleX(-1)
+--    steel2:setScaleX(-1)-------------因为右边钢架反转导致右边钢架无法检测！！
     local steel2Y = (self.m_levelCon.right[1]-1)*Room_Size.height
-    steel2:setPosition(cc.p(self._x+self.m_levelCon.lineX[2]+16+size.width*0.5+15,size.height*0.5+16+_y+steel2Y))
+    steel2:setPosition(cc.p(self._x+self.m_levelCon.lineX[2]+10+size.width*0.5+15,size.height*0.5+16+_y+steel2Y))
     steel1:setCameraMask(2)
     steel2:setCameraMask(2)
     if self.twoLeanFloor then
