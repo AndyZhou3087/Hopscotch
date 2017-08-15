@@ -6,7 +6,7 @@ local PhysicSprite = require("game.custom.PhysicSprite")
 local Scheduler = require("framework.scheduler")
 local RocketElement = require("game.view.element.RocketElement")
 
-local MASS = 50
+local MASS = 0
 local DENSITY = 0   --密度
 local FRICTION   = 0    --摩擦力
 local ELASTICITY = 0    --反弹力
@@ -142,10 +142,12 @@ end
 --上跳状态
 function Player:toJump(pos,isRunning)
 
+    self.checkPos = false
     self:toStartJump()
     local x,y = self:getPosition()
 
     local _vec = self.m_body:getVelocity()
+--    self:setBodyVelocity(cc.p(_vec.x,0))
     local _scaleX=self:getScaleX()
     if _scaleX<0 then
         _vec.x=self.m_vo.m_speed
@@ -153,15 +155,24 @@ function Player:toJump(pos,isRunning)
         _vec.x=-self.m_vo.m_speed
     end
     self:setBodyVelocity(cc.p(_vec.x,260))
-    self.jumpHandler = Tools.delayCallFunc(0.35,function()
+    self.jumpHandler = Tools.delayCallFunc(0.23,function()
+        self.checkHandler = Tools.delayCallFunc(0.1,function()
+            self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
+            self.checkPos = true
+        end)
         self:toStopJump()
-        self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
+--        self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
     end)
 
     AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Jump_Sound)
+  
 end
 
 function Player:toStartJump()
+    if self.checkHandler then
+        Scheduler.unscheduleGlobal(self.checkHandler)
+        self.checkHandler=nil
+    end
     if self.jumpHandler then
         Scheduler.unscheduleGlobal(self.jumpHandler)
         self.jumpHandler=nil
@@ -292,6 +303,8 @@ function Player:phantom(parameters)
         self:clearBuff(PLAYER_STATE.Phantom)
     end)
     
+    AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Phantom_Sound,true)
+    
 end
 
 --开局冲刺
@@ -312,6 +325,8 @@ function Player:startRocket(parameters)
     
     --火箭特效
     self:rocketEffect()
+    
+    AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Rocket_Sound,true)
 end
 
 function Player:toStartRocket()
@@ -509,16 +524,20 @@ function Player:selfDead()
     if not self.m_isDead and self.m_vo.m_lifeNum <= 0 then
         self.m_isDead = true
         if GameDataManager.getPoints() <= 20 then
---            Tools.printDebug("--------brj 角色死亡：")
-            if GameDataManager.getPoints()>=GameDataManager.getRecord() then
-                GameDataManager.saveRecord(GameDataManager.getPoints())
-            end
-            --低于20层回到起点
-            if not tolua.isnull(self:getParent()) then
-                self:getParent():backOriginFunc()
-            end
-            self.m_body:setCollisionBitmask(0x03)
+            AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Dead_Sound)
+            Tools.delayCallFunc(0.5,function()
+--                Tools.printDebug("--------brj 角色死亡：")
+                if GameDataManager.getPoints()>=GameDataManager.getRecord() then
+                    GameDataManager.saveRecord(GameDataManager.getPoints())
+                end
+                --低于20层回到起点
+                if not tolua.isnull(self:getParent()) then
+                    self:getParent():backOriginFunc()
+                end
+                self.m_body:setCollisionBitmask(0x03)
+            end)
         else
+            AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.GameOver_Sound)
             self:stopAllActions()
             self.m_armature:stopAllActions()
             if GameDataManager.getRevive() then
@@ -623,6 +642,8 @@ function Player:clearBuff(_type)
             self:resumeVelocLimit()
             self:setBodyVelocity(cc.p(self.m_stopVec.x,0))
             self.m_speed = self.m_stopSpeed
+            
+            AudioManager.stopSoundEffect(AudioManager.Sound_Effect_Type.Rocket_Sound)
         elseif _type == PLAYER_STATE.StartRocket then
             transition.stopTarget(self)
             self:stopAllActions()
@@ -641,6 +662,8 @@ function Player:clearBuff(_type)
             self:resumeVelocLimit()
             self:setBodyVelocity(cc.p(self.m_stopVec.x,0))
             self.m_speed = self.m_stopSpeed
+            
+            AudioManager.stopSoundEffect(AudioManager.Sound_Effect_Type.Rocket_Sound)
         elseif _type == PLAYER_STATE.Phantom then
             if not tolua.isnull(self:getParent()) then
                 self:getParent():setPhantomShow(false)
@@ -649,6 +672,7 @@ function Player:clearBuff(_type)
                 Scheduler.unscheduleGlobal(self.phantomHandler)
                 self.phantomHandler=nil
             end
+            AudioManager.stopSoundEffect(AudioManager.Sound_Effect_Type.Phantom_Sound)
         end
     end
 end
@@ -713,6 +737,11 @@ end
 --获取角色名
 function Player:getRoleDes()
     return self.m_roleDes
+end
+
+--获取可检测坐标标识
+function Player:getCheckSign()
+    return self.checkPos
 end
 
 function Player:toPlay(_actionName)
@@ -785,6 +814,11 @@ function Player:dispose(_isDoor)
     if self.jumpHandler then
         Scheduler.unscheduleGlobal(self.jumpHandler)
         self.jumpHandler=nil
+    end
+    
+    if self.checkHandler then
+        Scheduler.unscheduleGlobal(self.checkHandler)
+        self.checkHandler=nil
     end
     
 

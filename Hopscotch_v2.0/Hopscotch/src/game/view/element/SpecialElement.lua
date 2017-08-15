@@ -49,13 +49,21 @@ function SpecialElement:collision()
     if self.moveCount == #self.arrMove then
     	return
     end
+    if self.isMove then
+        return
+    end
+    self.isMove = true
     self:stopAllActions()
     local x,y = self:getPosition()
     local count_1 = self.moveCount
     self.moveCount = self.moveCount + 1
     local _y = (self.arrMove[self.moveCount]-self.arrMove[count_1])*Room_Size.height
     local move = cc.MoveTo:create(0.2,cc.p(x,y+_y))
-    self:runAction(move)
+    local callfunc = cc.CallFunc:create(function()
+        self.isMove = false
+    end)
+    local seq = cc.Sequence:create(move,callfunc)
+    self:runAction(seq)
     if not tolua.isnull(self.lineSprite) then
     	self.lineSprite:moveUp()
     end

@@ -149,6 +149,7 @@ function MapRoom:initBlock(_roomBgVo)
         end
         if #_roomBgVo.wallLeftRight == 2 then
         	self.isCloseRoom = true
+            self.wallDirection = OpenWallType.Close
         else
             self.isCloseRoom = false
             if #_roomBgVo.wallLeftRight == 1 then

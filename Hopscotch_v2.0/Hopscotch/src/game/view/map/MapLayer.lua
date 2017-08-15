@@ -137,37 +137,37 @@ function MapLayer:updateAIJump()
         local roomType = _room:getCurRoomType()
         if roomType == MAPROOM_TYPE.Common or roomType == MAPROOM_TYPE.Lean then
             if _room:getRoomCloseValue() then
-                self.matchRole:toJump()
+                self.matchRole:toJump(pos)
                 self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
             else
                 if _room:getSingleOpenWallDir() == OpenWallType.Left then
                     if bpx > pos.x + display.cx then
-                        self.matchRole:toJump()
+                        self.matchRole:toJump(pos)
                         self.aiTime = 0.6*spaceSpeed/self.matchRole:getSpeed()
                     else
                         if _scaleX == -1 then
-                            self.matchRole:toJump()
+                            self.matchRole:toJump(pos)
                             self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
                         else
-                            self.matchRole:toJump()
+                            self.matchRole:toJump(pos)
                             self.aiTime = 0.2*spaceSpeed/self.matchRole:getSpeed()
                         end
                     end
                 elseif _room:getSingleOpenWallDir() == OpenWallType.Right then
                     if bpx < pos.x + display.cx then
-                        self.matchRole:toJump()
+                        self.matchRole:toJump(pos)
                         self.aiTime = 0.6*spaceSpeed/self.matchRole:getSpeed()
                     else
                         if _scaleX == 1 then
-                            self.matchRole:toJump()
+                            self.matchRole:toJump(pos)
                             self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
                         else
-                            self.matchRole:toJump()
+                            self.matchRole:toJump(pos)
                             self.aiTime = 0.2*spaceSpeed/self.matchRole:getSpeed()
                         end
                     end
                 else
-                    self.matchRole:toJump()
+                    self.matchRole:toJump(pos)
                     self.aiTime = 0.15*spaceSpeed/self.matchRole:getSpeed()
                 end
             end
@@ -1241,7 +1241,7 @@ function MapLayer:collisionBeginCallBack(parameters)
             local _size = self.m_player:getSize()
             local bpx,bpy = self.m_player:getPosition()
             local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
-            if roomIndex == self.jumpFloorNum then
+            if self.m_player:getCheckSign() then
                 local floorPos
                 if self.floorPos[self.jumpFloorNum].x then
                     floorPos = self.floorPos[self.jumpFloorNum]
@@ -1274,17 +1274,24 @@ function MapLayer:collisionBeginCallBack(parameters)
             local _size = self.m_player:getSize()
             local _scaleX = self.m_player:getScaleX()
             if playerBP.y+_size.height<=obstacleBP.y then
-                if playerBP.x+_size.width*0.5 >= obstacleBP.x-8 and _scaleX == -1 or (playerBP.x-_size.width*0.5 <= obstacleBP.x+8 and _scaleX == 1) then
+                if (playerBP.x+_size.width*0.5 >= obstacleBP.x-8 and _scaleX == -1 and (self.openDistance == OpenWallType.Right or self.openDistance == OpenWallType.All)) 
+                    or (playerBP.x-_size.width*0.5 <= obstacleBP.x+8 and _scaleX == 1 and (self.openDistance == OpenWallType.Left or self.openDistance == OpenWallType.All)) then
                     self:playerDead()
                     return false
-                end
+                else
+                    if self.m_player:getJump() then
+                        self.m_player:toStopJump()
+                    end
+                end  
             end
-            if playerBP.x+_size.width*0.5<obstacleBP.x then
-                player:setVelocity(cc.p(player:getSpeed(),vel.y))
-                player:setScaleX(math.abs(_scaleX))
-            else
-                player:setVelocity(cc.p(-player:getSpeed(),vel.y))
-                player:setScaleX(-math.abs(_scaleX))
+            if playerBP.y+_size.height>obstacleBP.y and playerBP.y-_size.height<obstacleBP.y then
+                if playerBP.x+_size.width*0.5<obstacleBP.x then
+                    player:setVelocity(cc.p(player:getSpeed(),vel.y))
+                    player:setScaleX(math.abs(_scaleX))
+                else
+                    player:setVelocity(cc.p(-player:getSpeed(),vel.y))
+                    player:setScaleX(-math.abs(_scaleX))
+                end
             end
        end
        if obstacleTag==ELEMENT_TAG.SPECIAL_TAG then
@@ -1330,7 +1337,7 @@ function MapLayer:rayCastFunc(_world,_p1,_p2,_p3)
         local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
         if not self.m_player:getJump() and self.curRoomType ~= MAPROOM_TYPE.Running and not GameController.isInState(PLAYER_STATE.Rocket) 
             and not GameController.isInState(PLAYER_STATE.StartRocket)then
-            if roomIndex == self.jumpFloorNum then
+--            if roomIndex == self.jumpFloorNum then
                 local floorPos
                 if self.floorPos[self.jumpFloorNum].x then
                     floorPos = self.floorPos[self.jumpFloorNum]
@@ -1343,8 +1350,8 @@ function MapLayer:rayCastFunc(_world,_p1,_p2,_p3)
                         end
                     end
                 end
-                self.m_player:setPosition(cc.p(bpx,floorPos.y+_size.height*0.5+self.m_player:getErrorValue()))
-            end
+--                self.m_player:setPosition(cc.p(bpx,floorPos.y+_size.height*0.5+self.m_player:getErrorValue()))
+--            end
         end
         self.isCollision = true
         
@@ -1375,12 +1382,17 @@ function MapLayer:rayCastFuncX(_world,_p1,_p2,_p3)
         if not tolua.isnull(_bnode) then
             local vel=self.m_player:getBody():getVelocity()
             local _size = self.m_player:getSize()
-            if playerBP.x+_size.width*0.5<obstacleBP.x then
-                self.m_player:setVelocity(cc.p(self.m_player:getSpeed(),vel.y))
-                self.m_player:setScaleX(math.abs(_scaleX))
-            else
-                self.m_player:setVelocity(cc.p(-self.m_player:getSpeed(),vel.y))
-                self.m_player:setScaleX(-math.abs(_scaleX))
+            if playerBP.y+_size.height>obstacleBP.y and playerBP.y-_size.height<obstacleBP.y then
+                if playerBP.x+_size.width*0.5<obstacleBP.x then
+                    self.m_player:setVelocity(cc.p(self.m_player:getSpeed(),vel.y))
+                    self.m_player:setScaleX(math.abs(_scaleX))
+                else
+                    self.m_player:setVelocity(cc.p(-self.m_player:getSpeed(),vel.y))
+                    self.m_player:setScaleX(-math.abs(_scaleX))
+                end
+            end
+            if _tag==ELEMENT_TAG.SPECIAL_TAG then
+                _bnode:collision()
             end
        end
     end
@@ -1517,6 +1529,7 @@ function MapLayer:CoreLogic()
             self.curRoomKey = _room:getRoomKey()
             self.curRoomWidth = _room:getRoomWidth()
             self.isCloseRoom = _room:getRoomCloseValue()
+            self.openDistance = _room:getSingleOpenWallDir()
 --            Tools.printDebug("----------brj 当前房间是否封闭层：",self.isCloseRoom)
             if self.curRoomType == MAPROOM_TYPE.Running and self.curRoomDistance == MAPRUNNING_TYPE.Both then
                 if _scaleX == -1 then
