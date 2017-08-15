@@ -981,11 +981,11 @@ function MapLayer:onEnterFrame(dt)
         self.m_physicWorld:rayCast(handler(self,self.rayCastFuncX),cc.p(_p.x,_p.y-_size.height*0.25),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y-_size.height*0.25))
     end
     
-    
     --=====================幻影效果===================
     if self.phantomShow then
 --        Tools.printDebug("----brj hopscotch 幻影效果：",self.phantomShow,math.abs(bpx - 20),self.lastPlsyerX)
         if not self.lastPlsyerX or math.abs(bpx - self.lastPlsyerX) > 20 then
+--            Tools.printDebug("----brj ?????????????????????????：",self.phantomShow,self.lastPlsyerX)
             self.lastPlsyerX = bpx
             local sprite = display.newSprite(RoleConfig[GameDataManager.getFightRole()].roleImg):addTo(self)
             local pos = self.m_camera:convertToNodeSpace(cc.p(bpx,bpy))
@@ -998,6 +998,7 @@ function MapLayer:onEnterFrame(dt)
             sprite:runAction(seq)
         end
     end
+    --===============================================
  
     
     if self.curRoomType == MAPROOM_TYPE.Running and not self.m_player:isInState(PLAYER_STATE.Rocket) and not self.m_player:isInState(PLAYER_STATE.StartRocket) then
@@ -1165,7 +1166,7 @@ function MapLayer:onEnterFrame(dt)
         self.rocketLastPos = cameraPos
     end
     
---    Tools.printDebug("------------bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb---------：",self.m_player:getPositionX())
+--    Tools.printDebug("------------bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb---------：",self.m_player:getPositionY())
 
 end
 
@@ -1185,11 +1186,12 @@ function MapLayer:collisionBeginCallBack(parameters)
     local bodyB = parameters:getShapeB():getBody()
     local tagA = bodyA:getTag()
     local tagB = bodyB:getTag()
+    --    Tools.printDebug("chjh beginCallBack bodyA,bodyB",tostring(bodyA),tostring(bodyB))
     local player,playerBP,playerTag,_size,playerBody
     local obstacle,obstacleBP,obstacleTag,obstacleBody
     local obstacleS,obstacleScale
     local obstacleOff
-    
+
     if tagA == ELEMENT_TAG.PLAYER_TAG then
         player = bodyA:getNode()
         playerBP = bodyA:getPosition()
@@ -1216,8 +1218,6 @@ function MapLayer:collisionBeginCallBack(parameters)
 
         obstacleOff=parameters:getShapeA():getOffset()
     end
---    Tools.printDebug("------------brj 竞技模式碰撞：",tagA,tagB,player:getRoleDes())
-    
     if tolua.isnull(bodyA) or tolua.isnull(bodyB) then
         return true
     end
@@ -1255,7 +1255,7 @@ function MapLayer:collisionBeginCallBack(parameters)
                     end
                 end
                 self.m_player:setPosition(cc.p(bpx,floorPos.y+_size.height*0.5+self.m_player:getErrorValue()))
---                Tools.printDebug("----------brj 碰撞检测------------: ")
+--                Tools.printDebug("----------brj 碰撞检测------------: ",floorPos.y+_size.height*0.5+self.m_player:getErrorValue())
             end
         end
     end
@@ -1267,7 +1267,7 @@ function MapLayer:collisionBeginCallBack(parameters)
     else
         _x = 1
     end
---    Tools.printDebug("brj------------碰撞tag: ",obstacleTag)
+
     if obstacleTag==ELEMENT_TAG.WALLLEFT or obstacleTag==ELEMENT_TAG.WALLRIGHT or obstacleTag==ELEMENT_TAG.SPECIAL_TAG then
        if not tolua.isnull(obstacle) then
             local vel=self.m_player:getBody():getVelocity()
@@ -1294,7 +1294,9 @@ function MapLayer:collisionBeginCallBack(parameters)
                 end
             end
        end
+        
        if obstacleTag==ELEMENT_TAG.SPECIAL_TAG then
+--            Tools.printDebug("brj22222222222222222222222------------碰撞tag: ",not tolua.isnull(obstacle))
             if not tolua.isnull(obstacle) then
             	obstacle:collision()
             end
@@ -1350,6 +1352,7 @@ function MapLayer:rayCastFunc(_world,_p1,_p2,_p3)
                         end
                     end
                 end
+--                Tools.printDebug("----------brj 不停检测角色y轴：",self.jumpFloorNum,floorPos.y)
 --                self.m_player:setPosition(cc.p(bpx,floorPos.y+_size.height*0.5+self.m_player:getErrorValue()))
 --            end
         end
@@ -1364,6 +1367,7 @@ function MapLayer:rayCastFunc(_world,_p1,_p2,_p3)
 
     return true
 end
+
 
 function MapLayer:rayCastFuncX(_world,_p1,_p2,_p3)
 

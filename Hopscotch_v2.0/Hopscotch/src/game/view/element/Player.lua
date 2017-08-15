@@ -147,7 +147,7 @@ function Player:toJump(pos,isRunning)
     local x,y = self:getPosition()
 
     local _vec = self.m_body:getVelocity()
---    self:setBodyVelocity(cc.p(_vec.x,0))
+    self:setBodyVelocity(cc.p(_vec.x,0))
     local _scaleX=self:getScaleX()
     if _scaleX<0 then
         _vec.x=self.m_vo.m_speed
@@ -156,16 +156,14 @@ function Player:toJump(pos,isRunning)
     end
     self:setBodyVelocity(cc.p(_vec.x,260))
     self.jumpHandler = Tools.delayCallFunc(0.23,function()
-        self.checkHandler = Tools.delayCallFunc(0.1,function()
+--        self.checkHandler = Tools.delayCallFunc(0.01,function()
             self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
             self.checkPos = true
-        end)
+--        end)
         self:toStopJump()
---        self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
     end)
 
     AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Jump_Sound)
-  
 end
 
 function Player:toStartJump()

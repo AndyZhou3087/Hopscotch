@@ -124,45 +124,6 @@ function MapRoom:initBlock(_roomBgVo)
             bg:setPosition(cc.p(info.x,info.y))
         end
     end
-    if _roomBgVo.wallLeftRight then
-        for j=1, #_roomBgVo.wallLeftRight do
-            local info = _roomBgVo.wallLeftRight[j]
-            local type = Tools.Split("0"..info.res,"#")
-            local wall = PoolManager.getCacheObjByType(CACHE_TYPE[type[2]])
-            if not wall then
-                wall = PhysicSprite.new(info.res)
-                wall:setCahceType(CACHE_TYPE[info.res])
-                local tag
-                if info.type == RoomWall_Type.Left then
-                    tag = ELEMENT_TAG.WALLLEFT
-                else
-                    tag = ELEMENT_TAG.WALLRIGHT
-                end
-                self:addPhysicsBody(wall,tag)
-                wall:retain()
-            end
-            self:addChild(wall)
-            local wallSize = wall:getCascadeBoundingBox().size
-            wall:setAnchorPoint(cc.p(0.5,0.5))
-            wall:setPosition(cc.p(info.x+wallSize.width*0.5,info.y+wallSize.height*0.5))
-            table.insert(self.m_blocks,wall)
-        end
-        if #_roomBgVo.wallLeftRight == 2 then
-        	self.isCloseRoom = true
-            self.wallDirection = OpenWallType.Close
-        else
-            self.isCloseRoom = false
-            if #_roomBgVo.wallLeftRight == 1 then
-                if _roomBgVo.wallLeftRight[1].x < display.cx then
-                    self.wallDirection = OpenWallType.Right
-                else
-                    self.wallDirection = OpenWallType.Left
-                end
-            elseif #_roomBgVo.wallLeftRight == 0 then
-                self.wallDirection = OpenWallType.All
-            end
-        end
-    end
     if _roomBgVo.floor then
         self.lastWidth = 0
         self.lastX = 0
@@ -189,6 +150,45 @@ function MapRoom:initBlock(_roomBgVo)
             end
         end
         self.roomWidth = self.lastX-self.firstX+self.lastWidth
+    end
+    if _roomBgVo.wallLeftRight then
+        for j=1, #_roomBgVo.wallLeftRight do
+            local info = _roomBgVo.wallLeftRight[j]
+            local type = Tools.Split("0"..info.res,"#")
+            local wall = PoolManager.getCacheObjByType(CACHE_TYPE[type[2]])
+            if not wall then
+                wall = PhysicSprite.new(info.res)
+                wall:setCahceType(CACHE_TYPE[info.res])
+                local tag
+                if info.type == RoomWall_Type.Left then
+                    tag = ELEMENT_TAG.WALLLEFT
+                else
+                    tag = ELEMENT_TAG.WALLRIGHT
+                end
+                self:addPhysicsBody(wall,tag)
+                wall:retain()
+            end
+            self:addChild(wall)
+            local wallSize = wall:getCascadeBoundingBox().size
+            wall:setAnchorPoint(cc.p(0.5,0.5))
+            wall:setPosition(cc.p(info.x+wallSize.width*0.5,info.y+wallSize.height*0.5))
+            table.insert(self.m_blocks,wall)
+        end
+        if #_roomBgVo.wallLeftRight == 2 then
+            self.isCloseRoom = true
+            self.wallDirection = OpenWallType.Close
+        else
+            self.isCloseRoom = false
+            if #_roomBgVo.wallLeftRight == 1 then
+                if _roomBgVo.wallLeftRight[1].x < display.cx then
+                    self.wallDirection = OpenWallType.Right
+                else
+                    self.wallDirection = OpenWallType.Left
+                end
+            elseif #_roomBgVo.wallLeftRight == 0 then
+                self.wallDirection = OpenWallType.All
+            end
+        end
     end
 end
 
@@ -265,7 +265,7 @@ function MapRoom:initGoods(goodCon,isShow)
             good:setPosition(x+goodSize.width*0.5,goodCon[var].y+goodSize.height*0.5)
             table.insert(self.m_goods,good)
             table.insert(self.m_blocks,good)
-            --        GameController.addGoodBody(good)
+--            GameController.addGoodBody(good)
         end
     end
 end
