@@ -282,7 +282,7 @@ end
 
 --幻影药水
 function Player:phantom(parameters)
-    if self:isInState(PLAYER_STATE.Rocket) then
+    if self:isInState(PLAYER_STATE.Rocket) or self:isInState(PLAYER_STATE.StartRocket) then
         return
     end
     
@@ -346,6 +346,10 @@ function Player:springRocket(parameters)
         return
     end
     
+    if self:isInState(PLAYER_STATE.Phantom) then
+        self:addBuff({type=PLAYER_STATE.Phantom})
+    end
+    
     if self:getJump() then
         self:toStopJump()
     end
@@ -362,6 +366,7 @@ function Player:springRocket(parameters)
     local roomType = self:getParent():getRoomByIdx(curFloor):getCurRoomType()
     self.toRocketState = 0
 
+    AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Rocket_Sound,true)
     Tools.printDebug("----------brj 跳房子 火箭冲刺：",curFloor,curCloseFloor+10)
     
     self.m_armature:setVisible(false)
