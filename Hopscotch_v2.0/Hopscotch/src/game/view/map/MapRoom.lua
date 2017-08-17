@@ -397,11 +397,6 @@ function MapRoom:getRoomKey()
     return self.m_index
 end
 
---获取房间开口方向
-function MapRoom:getSingleOpenWallDir()
-    return self.wallDirection
-end
-
 --是否为封闭房间
 function MapRoom:getRoomCloseValue()
     return self.isCloseRoom
@@ -418,6 +413,11 @@ function MapRoom:getRoomsCount()
     	return 0
     end
     return #self.m_curLevelCon.roomBgs
+end
+
+--获取房间开口方向
+function MapRoom:getSingleOpenWallDir()
+    return self.wallDirection
 end
 
 --销毁
