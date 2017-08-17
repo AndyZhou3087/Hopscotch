@@ -907,6 +907,7 @@ function MapLayer:onEnterFrame(dt)
     if self.m_player:isDead() then
         return
     end
+    
 
     local bpx,bpy = self.m_player:getPosition()
     local _size = self.m_player:getSize()
@@ -940,11 +941,11 @@ function MapLayer:onEnterFrame(dt)
     local x,y = self.m_camera:getPosition()
     if not self.m_player:isInState(PLAYER_STATE.StartRocket) and not self.m_player:isInState(PLAYER_STATE.Rocket) then
         if self.curRoomType ~= MAPROOM_TYPE.Running and (not self.runMapFloor or (self.jumpFloorNum ~= self.runMapFloor and self.jumpFloorNum ~= self.runMapFloor + 1)) then
-            if bpx <= pos.x-_size.width*0.5 then
+            if bpx <= pos.x+_size.width*0.5 then
                 self:playerDead()
 --                Tools.printDebug("brj2222222222222222--------左边死亡---------:",self.jumpFloorNum,bpx,pos.x-_size.width*0.5)
             end
-            if bpx >= pos.x+display.right+_size.width*0.5 then
+            if bpx >= pos.x+display.right-_size.width*0.5 then
                 self:playerDead()
 --                Tools.printDebug("brj1111111111111111--------右边死亡---------:",self.jumpFloorNum,bpx,pos.x+display.right+_size.width*0.5)
             end
@@ -1092,7 +1093,7 @@ function MapLayer:onEnterFrame(dt)
     elseif self.jumpFloorNum == Map_Grade.floor_S then
         self.m_player:changeSpeed(MAP_SPEED.floor_S)
     end
-    
+   
     
     --双向倾斜时，当移出镜头时，移除右向缓存房间
     if #self.m_rightRooms > 0 then
@@ -1141,6 +1142,7 @@ function MapLayer:onEnterFrame(dt)
     
     --开局冲刺火箭
     if self.rocketFloor and GameDataManager.getPoints() == self.rocketFloor and self.m_player:isInState(PLAYER_STATE.StartRocket) then
+    	--
         self:toStopStartRocket()
     end
     
@@ -1579,9 +1581,10 @@ function MapLayer:CoreLogic()
         end
     end
 
-    local _room,rKey = self:getOtherRoomByX(bpx,self.roomKey)
-    if _room then
-        if self.curRoomType == MAPROOM_TYPE.Running then
+
+    if self.curRoomType == MAPROOM_TYPE.Running then
+        local _room,rKey = self:getOtherRoomByX(bpx,self.roomKey)
+        if _room then
             if self.runningKey and self.runningKey < _room:getRoomKey() then
                 self.roomKey = rKey
                 self.runningKey = _room:getRoomKey()
@@ -1595,6 +1598,7 @@ function MapLayer:CoreLogic()
             end
         end
     end
+    
 end
 
 --游戏死亡

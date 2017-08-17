@@ -39,8 +39,8 @@ function Player:ctor(_type)
     if modle then
         self.m_modle=modle
         self.m_jumpModle = jump
-        self.m_armature = display.newSprite(res):addTo(self)
---        self:_showFilter(res)
+        self.m_armature = display.newSprite(res)
+        self:addChild(self.m_armature,1)
         self:createModle(modle)
         self.m_armature:setScale(0.45)
         if self.m_curModle == 1 or self.m_curModle == 7 then
@@ -507,6 +507,10 @@ function Player:relive(parameters)
     self:setPosition(cc.p(pos.x+display.cx,pos.y))
     self:clearAllBuff()
     self:springRocket()
+    if not tolua.isnull(self.jumpSack) then
+    	self.jumpSack:removeFromParent()
+    	self.jumpSack = nil
+    end
 end
 
 --角色死亡
@@ -543,6 +547,11 @@ function Player:selfDead()
             AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.GameOver_Sound)
             self:stopAllActions()
             self.m_armature:stopAllActions()
+            
+            self.jumpSack = display.newSprite("ui/jumpsack.png")
+            self:addChild(self.jumpSack,0)
+            self.jumpSack:setPosition(cc.p(0,50))
+            
             if GameDataManager.getRevive() then
                 --弹结算
                 GameDispatcher:dispatch(EventNames.EVENT_OPEN_SETTLEMENT)

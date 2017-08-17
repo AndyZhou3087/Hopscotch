@@ -14,7 +14,6 @@ local Block_FRICTION = 0
 local Block_ELASTICITY = 0
 local Block_MASS = 400
 
-
 --@param1:房间编号
 --@param2:房间的配置id
 function MapRoom:ctor(_idx,_levelCon,_floorNum,dArr,gFloor)
