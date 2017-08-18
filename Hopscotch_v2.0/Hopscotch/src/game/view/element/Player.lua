@@ -335,14 +335,11 @@ end
 
 --冲刺火箭
 function Player:springRocket(parameters)
-    Tools.printDebug("----------brj========== 跳房子 火箭冲刺：")
     if self:isInState(PLAYER_STATE.Rocket) then
-        Tools.printDebug("---------1111111111111111111111111==== 跳房子 火箭冲刺：")
         return
     end
     
     if self:isInState(PLAYER_STATE.StartRocket) then
-        Tools.printDebug("---------222222222222222222222222222== 跳房子 火箭冲刺：")
         return
     end
     

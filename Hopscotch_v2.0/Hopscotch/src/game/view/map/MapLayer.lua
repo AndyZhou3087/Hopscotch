@@ -52,7 +52,6 @@ function MapLayer:ctor(parameters)
     self.floorPos = {}
     self.roomArr = {}
     self.specialBody = {}
-
     self.runFloorNum = RunningFloorNum
     self.isBgMove = false
     self.isMapBottom = true
@@ -1224,15 +1223,14 @@ function MapLayer:collisionBeginCallBack(parameters)
         return true
     end
     
-    if tolua.isnull(obstacle) then
-        return true
-    end
-    
     if (not player) or player:isDead() then
         return true
     end
+    if tolua.isnull(obstacle) then
+        return false
+    end
     if player:isInState(PLAYER_STATE.Rocket) or player:isInState(PLAYER_STATE.StartRocket) then
-        return true
+    	return true
     end
     
     if obstacleTag == ELEMENT_TAG.FLOOR then
