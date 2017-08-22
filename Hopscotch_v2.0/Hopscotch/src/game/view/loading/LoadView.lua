@@ -72,32 +72,35 @@ function LoadView:ctor(parameters)
         AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Button_Click_Sound)
     end)
 
---    self:setTouchEnabled(true)
-    self:addNodeEventListener(cc.NODE_TOUCH_EVENT, function(event)
-        if event.name == "began" then
-            if not self.touchClick then
-            	self.touchClick = true
-                Tools.printDebug("-------------------进入主场景")
-                GAME_CONTROL = Game_Mode.Common
-                GameDataManager.generatePlayerVo()  --产生新的角色数据对象
-                app:enterGameScene()
-            end
-            AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Button_Click_Sound)
-            return true
-        elseif event.name == "ended" then
+
+    self.CommonBtn = cc.uiloader:seekNodeByName(self.m_json,"CommonBtn")
+    self.Image_1 = cc.uiloader:seekNodeByName(self.m_json,"Image_11")
+    self.CommonBtn:onButtonPressed(function(_event)    --按下
+        self.Image_1:setPositionY(self.Image_1:getPositionY()-10)
+    end)
+    self.CommonBtn:onButtonRelease(function(_event)    --触摸离开
+        self.Image_1:setPositionY(self.Image_1:getPositionY()+10)
+    end)
+    self.CommonBtn:onButtonClicked(function (event)
+        if not self.touchClick then
+            self.touchClick = true
+            Tools.printDebug("-------------------普通模式")
+            GAME_CONTROL = Game_Mode.Common
+            GameDataManager.generatePlayerVo()  --产生新的角色数据对象
+            app:enterGameScene()
         end
+        AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Button_Click_Sound)
     end)
     
-    
-    self.countDown = 0
-    self.countDownLabel = cc.uiloader:seekNodeByName(self.m_json,"BitmapLabel_14")
-    self.countDownLabel:setColor(cc.c3b(50,222,255))
-    self:updateTime()
-    LoadResManager.toLoadPlayerRes(handler(self,self.playerResFinish))
-    
-    --竞技模式
-    self.Button_14 = cc.uiloader:seekNodeByName(self.m_json,"Button_14")
-    self.Button_14:onButtonClicked(function (event)
+    self.PVPBtn = cc.uiloader:seekNodeByName(self.m_json,"PVPBtn")
+    self.Image_13 = cc.uiloader:seekNodeByName(self.m_json,"Image_13")
+    self.PVPBtn:onButtonPressed(function(_event)    --按下
+        self.Image_13:setPositionY(self.Image_13:getPositionY()-10)
+    end)
+    self.PVPBtn:onButtonRelease(function(_event)    --触摸离开
+        self.Image_13:setPositionY(self.Image_13:getPositionY()+10)
+    end)
+    self.PVPBtn:onButtonClicked(function (event)
         Tools.printDebug("--------brj 竞技模式")
         if not self.touchClick then
             self.touchClick = true
@@ -106,8 +109,43 @@ function LoadView:ctor(parameters)
             GameDataManager.generatePlayerVo()  --产生新的角色数据对象
             app:enterGameScene()
         end
+        AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Button_Click_Sound)
     end)
+    
+    self.SpeedBtn = cc.uiloader:seekNodeByName(self.m_json,"SpeedBtn")
+    self.Image_12 = cc.uiloader:seekNodeByName(self.m_json,"Image_12")
+    self.SpeedBtn:onButtonPressed(function(_event)    --按下
+        self.Image_12:setPositionY(self.Image_12:getPositionY()-10)
+    end)
+    self.SpeedBtn:onButtonRelease(function(_event)    --触摸离开
+        self.Image_12:setPositionY(self.Image_12:getPositionY()+10)
+    end)
+    self.SpeedBtn:onButtonClicked(function (event)
+        if not self.touchClick then
+            self.touchClick = true
+            Tools.printDebug("-------------------进入极速模式")
+            GAME_CONTROL = Game_Mode.Speed
+            GameDataManager.generatePlayerVo()  --产生新的角色数据对象
+            app:enterGameScene()
+        end
+        AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Button_Click_Sound)
+    end)
+    
+    
+    self.InverseBtn = cc.uiloader:seekNodeByName(self.m_json,"InverseBtn")
+    self.InverseBtn:setButtonEnabled(false)
+    
+    
+    self.countDown = 0
+    self.countDownLabel = cc.uiloader:seekNodeByName(self.m_json,"BitmapLabel_14")
+    self.countDownLabel:setColor(cc.c3b(50,222,255))
+    self:updateTime()
+    
+    
+    LoadResManager.toLoadPlayerRes(handler(self,self.playerResFinish))
+    
 end
+
 function LoadView:showAni(parameters)
     self.finger = display.newSprite("loading/click.png"):addTo(self)
     local animation = cc.AnimationCache:getInstance():getAnimation("clickAni")
@@ -164,9 +202,9 @@ function LoadView:playerResFinish()
             self:setTouchEnabled(true)
             
             --角色跑
-            self:roleMove()
+--            self:roleMove()
             --屏幕字幕闪现
-            self:showAni()
+--            self:showAni()
         end)
         local seq = cc.Sequence:create(fadeOut,callfunc)
         self.bg:runAction(seq)
@@ -212,7 +250,7 @@ function LoadView:roleMove()
         node:setPosition(cc.p(display.right+100,display.bottom+350))
     end)
     local seq2 = cc.Sequence:create(seq,callfunc)
-    local rff = cc.Repeat:create(seq2,3)
+    local rff = cc.RepeatForever:create(seq2)
     node:runAction(rff)
 end
 

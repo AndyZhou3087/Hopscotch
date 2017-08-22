@@ -50,7 +50,7 @@ function SpecialElement:collision()
     	return
     end
     if self.isMove then
-        return
+    	return
     end
     self.isMove = true
     self:stopAllActions()

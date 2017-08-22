@@ -39,7 +39,7 @@ GOLD_SPEED=26
 RunningFloorNum = 100000
 --随机每多少层出现一次
 RunningMin = RunningFloorNum
-RunningMax = 100000
+RunningMax = RunningFloorNum+500
 
 --背景移动系数
 Rdt_1 = 0.97
@@ -76,8 +76,10 @@ OpenWallType =
 
 --游戏模式
 Game_Mode = {
-    Common = 1,
-    Athletics = 2,
+    Common = 1, --普通
+    Athletics = 2, --竞技
+    Speed = 3,  --极速
+    Inverse = 4,  --反转
 }
 GAME_CONTROL = Game_Mode.Common
 
@@ -91,11 +93,11 @@ Map_Grade =
 }
 MAP_SPEED = 
 {
-    floor_D = 100,  --角色初始速度
-    floor_C = 100,
-    floor_B = 100,
-    floor_A = 100,
-    floor_S = 100,
+    floor_D = 120,  --角色初始速度
+    floor_C = 120,
+    floor_B = 120,
+    floor_A = 120,
+    floor_S = 120,
 }
 
 --封闭房间停顿时间
