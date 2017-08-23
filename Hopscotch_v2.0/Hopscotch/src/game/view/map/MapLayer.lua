@@ -219,7 +219,7 @@ function MapLayer:touchFunc(event)
     	return
     end
     if event.name == "began" then
---        if (Tools.getSysTime()-lastTouchTime)>=Sequent_Click_Time then
+        if (Tools.getSysTime()-lastTouchTime)>=Sequent_Click_Time then
             if self.isMapBottom then
                 self.isMapBottom = false
                 GameDispatcher:dispatch(EventNames.EVENT_HIDE_BOTTOM)
@@ -230,7 +230,7 @@ function MapLayer:touchFunc(event)
                 Tools.printDebug("brj 是否可连击跳跃: ",self.isCollision)
                 self:toJump()
             end
---        end
+        end
         return true
     elseif event.name == "ended" then
         lastTouchTime = Tools.getSysTime()
@@ -245,7 +245,7 @@ function MapLayer:initRooms(parameters)
     self.m_roomsNum = 0
     self._x = 0
     local _y = self.bottomHeight - Room_Size.height
-    self.gFloor = math.random(1,98)
+    self.gFloor = math.random(2,98)
     for k=1, MAP_ROOM_INIT_NUM*0.1 do
         --控制随机数种子
         if k > 1 then
@@ -396,7 +396,7 @@ function MapLayer:addNewRooms(parameters)
                 group = MapGroupD
             end
             local i
---            if type ~= Map_Grade.floor_S then
+            if self.m_roomsNum ~= type then
                 if self.transit_1 then
                     i = GameDataManager.getDataIdByWeight(type,group[3])
                     self.m_levelCon = GameDataManager.getMpaGradeTable(type,group[3])[i]
@@ -416,10 +416,10 @@ function MapLayer:addNewRooms(parameters)
                         self.m_levelCon = GameDataManager.getMpaGradeTable(type,group[1])[9999]
                     end
                 end
---            else
---                i = GameDataManager.getDataIdByWeight(type)
---                self.m_levelCon = config[i]
---            end
+            else
+                i = 31
+                self.m_levelCon = GameDataManager.getMpaGradeTable(type,group[1])[i]
+            end
             Tools.printDebug("-----------------------------brj Hopscotch 普通组组：",self.m_roomsNum,i,type)
             self.deadUMArr = {type,i}
             if self.m_levelCon.transit then
@@ -1158,7 +1158,13 @@ function MapLayer:onEnterFrame(dt)
     
     --火箭道具第一种类型
     if not (self.m_player:isInState(PLAYER_STATE.Rocket) and self.m_player:getRocketState()~=1) then
-        self:CoreLogic()
+--        if not self.m_player:isInState(PLAYER_STATE.Rocket) and not self.m_player:isInState(PLAYER_STATE.StartRocket) then
+--            if self.m_player:getJumpCount() == self.jumpFloorNum then
+--                self:CoreLogic()
+--            end
+--        else
+            self:CoreLogic() 
+--        end
     end
     
     if self.rocket then
@@ -1251,7 +1257,7 @@ function MapLayer:collisionBeginCallBack(parameters)
             and not GameController.isInState(PLAYER_STATE.StartRocket) then
             local _size = self.m_player:getSize()
             local bpx,bpy = self.m_player:getPosition()
-            local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
+            local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight-_size.height*0.5-10)/Room_Size.height)
             if self.m_player:getCheckSign() then
                 local floorPos
                 if self.floorPos[self.jumpFloorNum].x then
@@ -1349,7 +1355,7 @@ function MapLayer:rayCastFunc(_world,_p1,_p2,_p3)
     if _tag == ELEMENT_TAG.FLOOR then
         local _size = self.m_player:getSize()
         local bpx,bpy = self.m_player:getPosition()
-        local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
+        local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight-_size.height*0.5-10)/Room_Size.height)
         if not self.m_player:getJump() and self.curRoomType ~= MAPROOM_TYPE.Running and not GameController.isInState(PLAYER_STATE.Rocket) 
             and not GameController.isInState(PLAYER_STATE.StartRocket)then
 --            if roomIndex == self.jumpFloorNum then
@@ -1371,9 +1377,9 @@ function MapLayer:rayCastFunc(_world,_p1,_p2,_p3)
         end
         self.isCollision = true
         
-        if not GameController.isInState(PLAYER_STATE.Rocket) and not GameController.isInState(PLAYER_STATE.StartRocket) then
-            self:CoreLogic()
-        end
+--        if not GameController.isInState(PLAYER_STATE.Rocket) and not GameController.isInState(PLAYER_STATE.StartRocket) then
+--            self:CoreLogic()
+--        end
         
         return true
     end
@@ -1517,9 +1523,8 @@ function MapLayer:CoreLogic()
     local _scaleX = self.m_player:getScaleX()
     local bpx,bpy = self.m_player:getPosition()
     local cmx,cmy = self.m_camera:getPosition()
-    local roomIndex = math.ceil((bpy-self.bottomHeight)/Room_Size.height)
+    local roomIndex = math.ceil((bpy-self.bottomHeight-_size.height*0.5-10)/Room_Size.height)
 
---    Tools.printDebug("----------brj 当前room：111111111111111",self.m_lastRoomIdx,roomIndex)
     if self.m_lastRoomIdx ~= roomIndex then
         local _room
         if self.curRoomType == MAPROOM_TYPE.TwoLean and self.jumpFloorNum % 10 ~= 0 then
@@ -1531,11 +1536,9 @@ function MapLayer:CoreLogic()
         else
             local firstRunRoom = self:getRightRoomByIdx(roomIndex)
             if firstRunRoom and _scaleX == -1 then
---                Tools.printDebug("----------brj 当前room：111111111111111")
                 _room = firstRunRoom
             else
                 _room = self:getRoomByIdx(roomIndex)
---                Tools.printDebug("----------brj 当前room：2222222222222222")
             end
         end
         if _room then
@@ -1547,17 +1550,14 @@ function MapLayer:CoreLogic()
             self.curRoomWidth = _room:getRoomWidth()
             self.isCloseRoom = _room:getRoomCloseValue()
             self.openDistance = _room:getSingleOpenWallDir()
---            Tools.printDebug("----------brj 当前房间是否封闭层：",self.isCloseRoom)
             if self.curRoomType == MAPROOM_TYPE.Running and self.curRoomDistance == MAPRUNNING_TYPE.Both then
                 if _scaleX == -1 then
                     self.otherX = _room:getRoomWidth()+_room:getPositionX()+Room_Distance.x
---                    Tools.printDebug("----------brj 当前方向：111111111111111")
                 else
                     self.otherX = _room:getPositionX()+Room_Distance.x
---                    Tools.printDebug("----------brj 当前方向：222222222222222")
                 end
             end
-            self.otherY = _room:getPositionY()+Room_Size.height
+            self.otherY = _room:getPositionY()--+Room_Size.height
             self.m_lastRoomIdx = roomIndex
         end
         
@@ -1567,7 +1567,7 @@ function MapLayer:CoreLogic()
             GameDataManager.setPoints(self.jumpFloorNum)
             if self.curRoomType~=MAPROOM_TYPE.Running then
                 self:toCameraMove()
-                Tools.printDebug("----------brj 当前room：111111111111111")
+--                Tools.printDebug("----------brj 当前room：111111111111111")
             else
                 if self.jumpFloorNum % 10 == 1 then
                     self.runningKey = 1
@@ -1683,7 +1683,8 @@ end
 --进行弹跳
 function MapLayer:toJump()
     self.m_toJump = true
-    local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
+    local _size = self.m_player:getSize()
+    local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight-_size.height*0.5-10)/Room_Size.height)
     local pos
     if self.floorPos[roomIndex+1].x then
         pos = self.floorPos[roomIndex+1]
@@ -1812,6 +1813,8 @@ end
 
 --摄像机移动
 function MapLayer:toCameraMove()
+    local _size = self.m_player:getSize()
+    local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight-_size.height*0.5-10)/Room_Size.height)
     if self.curRoomType==MAPROOM_TYPE.Running then
         local pos
         if self.floorPos[self.jumpFloorNum].x then
@@ -1822,8 +1825,7 @@ function MapLayer:toCameraMove()
             else
                 pos = self.floorPos[self.jumpFloorNum][2]
             end
-        end
-        local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
+        end   
         if roomIndex >= GameDataManager.getPoints() then
             self.m_camera:stopAllActions()
             local mx,my = self.m_camera:getPosition()
@@ -1871,7 +1873,6 @@ function MapLayer:toCameraMove()
                 end
             end
         end
-        local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
         if roomIndex >= GameDataManager.getPoints() then
             self.m_camera:stopAllActions()
             local mx,my = self.m_camera:getPosition()
@@ -1894,7 +1895,8 @@ end
 
 --横跑过程中的摄像机移动
 function MapLayer:toRunCameraMove()
-    local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
+    local _size = self.m_player:getSize()
+    local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight-_size.height*0.5-10)/Room_Size.height)
     if roomIndex >= GameDataManager.getPoints() then
         local pos
         if self.floorPos[self.jumpFloorNum].x then
@@ -2094,7 +2096,7 @@ function MapLayer:backOriginFunc()
         Scheduler.unscheduleGlobal(self.delayHandler)
         self.delayHandler=nil
     end
-    self.delayHandler = Tools.delayCallFunc(1,function()
+    self.delayHandler = Tools.delayCallFunc(0.5,function()
         self.backOrigin = false
         self.bg:setTouchEnabled(false)
         self.bg:setTouchSwallowEnabled(false)
