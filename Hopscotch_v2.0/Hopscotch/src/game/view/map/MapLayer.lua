@@ -129,10 +129,10 @@ function MapLayer:updateAIJump()
     end
     local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
     local pos
-    if self.floorPos[roomIndex+1].x then
-        pos = self.floorPos[roomIndex+1]
+    if self.floorPos[roomIndex].x then
+        pos = self.floorPos[roomIndex]
     else
-        pos = self.floorPos[roomIndex+1][1]
+        pos = self.floorPos[roomIndex][1]
     end
     
     local _room = self:getRoomByIdx(roomIndex+1)
@@ -1683,12 +1683,17 @@ function MapLayer:CoreLogic()
 end
 
 --游戏死亡
-function MapLayer:playerDead()
+function MapLayer:playerDead(parm)
     if self.backOrigin then
     	return
     end
     self.isCollision = false
-    self.m_player:selfDead()
+    if parm and parm.data then
+        self.m_player:selfDead(parm.data)
+    else
+        self.m_player:selfDead()
+    end
+    
 end
 
 --双向横跑时根据编号从右边缓存中取出房间
