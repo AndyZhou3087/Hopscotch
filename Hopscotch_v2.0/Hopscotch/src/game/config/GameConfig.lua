@@ -9,7 +9,7 @@ PrintDebug = true
 OPACITY=160
 
 --初始钻石
-InitDiamond = 20
+InitDiamond = 0
 
 --获取礼物花费钻石的数量
 DiamondSpendReward = 100
@@ -65,13 +65,17 @@ MAP_ROOM_OTHER_MAX = 20
 --地图当前ZOder
 MAP_ZORDER_MAX=0
 
+
+--角色跳跃所用时间/跟摄像机移动时间匹配
+RoleJumpCameraMoveTime = 0.22
+
 OpenWallType = 
-{
-    Left = 1,
-    Right = 2,
-    All = 3,
-    Close = 4,
-}
+    {
+        Left = 1,
+        Right = 2,
+        All = 3,
+        Close = 4,
+    }
 
 
 --游戏模式
@@ -94,10 +98,10 @@ Map_Grade =
 MAP_SPEED = 
 {
     floor_D = 120,  --角色初始速度
-    floor_C = 120,
-    floor_B = 120,
-    floor_A = 120,
-    floor_S = 120,
+    floor_C = 130,
+    floor_B = 130,
+    floor_A = 140,
+    floor_S = 150,
 }
 
 --封闭房间停顿时间

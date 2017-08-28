@@ -141,7 +141,6 @@ function LoadView:ctor(parameters)
     self.countDownLabel:setColor(cc.c3b(50,222,255))
     self:updateTime()
     
-    
     LoadResManager.toLoadPlayerRes(handler(self,self.playerResFinish))
     
 end
@@ -196,7 +195,7 @@ function LoadView:updateCountDown()
 end
 
 function LoadView:playerResFinish()
-    Tools.delayCallFunc(1,function()
+    self.finishHandler = Tools.delayCallFunc(1,function()
         local fadeOut = cc.FadeOut:create(1.5)
         local callfunc = cc.CallFunc:create(function()
             self:setTouchEnabled(true)
@@ -260,6 +259,12 @@ function LoadView:onCleanup()
         Scheduler.unscheduleGlobal(self.m_Handler)
         self.m_Handler=nil
     end
+    
+    if self.finishHandler then
+        Scheduler.unscheduleGlobal(self.finishHandler)
+        self.finishHandler=nil
+    end
+    
 end
 
 --关闭界面调用

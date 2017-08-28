@@ -146,32 +146,47 @@ function Player:setGravityEnable(_enable)
 	end
 end
 
---上跳状态
+--上跳状态【先解决第一个版本问题，后续版本还要再改】
 function Player:toJump(pos,isRunning)
+    self.curFloorPos = pos
     
     self.checkPos = false
+    self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)--1、改动处
+--    self.jumpPro = self.m_jump
     self:toStartJump()
     local x,y = self:getPosition()
 
     local _vec = self.m_body:getVelocity()
---    self:setBodyVelocity(cc.p(_vec.x,0))
+    self:setBodyVelocity(cc.p(_vec.x,0))
     local _scaleX=self:getScaleX()
     if _scaleX<0 then
         _vec.x=self.m_vo.m_speed
     else
         _vec.x=-self.m_vo.m_speed
     end
-    self:setBodyVelocity(cc.p(_vec.x,260))
-    self.jumpHandler = Tools.delayCallFunc(0.23,function()
---        self.checkHandler = Tools.delayCallFunc(0.01,function()
---            self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
+--    if not self.jumpPro then
+        self:setBodyVelocity(cc.p(_vec.x,260))
+        self.jumpHandler = Tools.delayCallFunc(RoleJumpCameraMoveTime,function()
+            --        self.checkHandler = Tools.delayCallFunc(0.01,function()
+            --            self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
             self.checkPos = true
+            --        end)
+            self:toStopJump()
+        end)
+--    else
+--        self:setBodyVelocity(cc.p(_vec.x,180))
+--        self.jumpHandler = Tools.delayCallFunc(0.13,function()
+--            --        self.checkHandler = Tools.delayCallFunc(0.01,function()
+--            --            self:setPositionY(pos.y+self.m_size.height*0.5+self.errorValue)
+--            self.checkPos = true
+--            --        end)
+--            self:toStopJump()
 --        end)
-        self:toStopJump()
-    end)
+--    end
+    
     
     self.jumpCount = self.jumpCount+1
-    Tools.printDebug("--------------------------------------跳跃次数",self.jumpCount)
+    Tools.printDebug("--------------------------------------跳跃坐标：",self:getPositionY())
 
     AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Jump_Sound)
 end
@@ -186,7 +201,9 @@ function Player:toStartJump()
         self.jumpHandler=nil
     end
     self.m_body:setCollisionBitmask(0x08)
---    self:setGravityEnable(false)
+--    if self.jumpPro then
+--        self:setGravityEnable(false)
+--    end
     self:stopAllActions()
     self:createModle(self.m_jumpModle)
     self.m_jump = true
@@ -241,6 +258,9 @@ function Player:update(dt,_x,_y)
             self.ai:setPosition(cc.p(30,20))
         end
     end
+--    if self.m_jump then
+--    	self.curFloorPos
+--    end
 
 end
 
@@ -333,7 +353,6 @@ function Player:startRocket(parameters)
     self.m_armature:setVisible(false)
     self:toRocket()
     self:toStartRocket()
---    self:toStartRocket()
     
     --火箭特效
     self:rocketEffect()
