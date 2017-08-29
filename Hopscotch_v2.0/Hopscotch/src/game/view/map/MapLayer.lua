@@ -154,6 +154,7 @@ function MapLayer:updateAIJump()
     end
     
     local _room = self:getRoomByIdx(roomIndex+1)
+    local curRoom = self:getRoomByIdx(roomIndex)
     local bpx,bpy = self.matchRole:getPosition()
     local _scaleX = self.matchRole:getScaleX()
     if _room then
@@ -162,17 +163,17 @@ function MapLayer:updateAIJump()
             if _room:getRoomCloseValue() then
                 self.roomOpenMode = OpenWallType.Close
                 self:toMatchRoleJump(pos)
-                self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
+                self.aiTime = 0.9*spaceSpeed/self.matchRole:getSpeed()
             else
                 if _room:getSingleOpenWallDir() == OpenWallType.Left then
                     self.roomOpenMode = OpenWallType.Left
                     if bpx > pos.x + display.cx then
                         self:toMatchRoleJump(pos)
-                        self.aiTime = 0.6*spaceSpeed/self.matchRole:getSpeed()
+                        self.aiTime = 0.5*spaceSpeed/self.matchRole:getSpeed()
                     else
                         if _scaleX == -1 then
                             self:toMatchRoleJump(pos)
-                            self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
+                            self.aiTime = 0.9*spaceSpeed/self.matchRole:getSpeed()
                         else
                             self:toMatchRoleJump(pos)
                             self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
@@ -182,11 +183,11 @@ function MapLayer:updateAIJump()
                     self.roomOpenMode = OpenWallType.Right
                     if bpx < pos.x + display.cx then
                         self:toMatchRoleJump(pos)
-                        self.aiTime = 0.6*spaceSpeed/self.matchRole:getSpeed()
+                        self.aiTime = 0.5*spaceSpeed/self.matchRole:getSpeed()
                     else
                         if _scaleX == 1 then
                             self:toMatchRoleJump(pos)
-                            self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
+                            self.aiTime = 0.9*spaceSpeed/self.matchRole:getSpeed()
                         else
                             self:toMatchRoleJump(pos)
                             self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
@@ -194,7 +195,19 @@ function MapLayer:updateAIJump()
                     end
                 else
                     self.roomOpenMode = OpenWallType.All
-                    self:toMatchRoleJump(pos)
+--                    if bpx <= pos.x + display.cx + 100 and bpx >= pos.x + display.cx - 100 then
+                        self:toMatchRoleJump(pos)
+--                    else
+--                        if curRoom:getSingleOpenWallDir() == OpenWallType.Left then
+--                            if bpx > pos.x + display.cx + 100 then
+--                                self:toMatchRoleJump(pos)
+--                            else
+--                                self.aiTime = 0.04*spaceSpeed/self.matchRole:getSpeed()
+--                        	end
+--                        else
+--                            
+--                        end
+--                    end
                     self.aiTime = 0.08*spaceSpeed/self.matchRole:getSpeed()
                 end
             end
