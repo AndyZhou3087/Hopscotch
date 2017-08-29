@@ -36,7 +36,7 @@ Sequent_Click_Time = 0.05
 GOLD_SPEED=26
 
 --横跑出现的层数(每60层出现一次)
-RunningFloorNum = 100000
+RunningFloorNum = 1000000
 --随机每多少层出现一次
 RunningMin = RunningFloorNum
 RunningMax = RunningFloorNum+500
@@ -185,6 +185,7 @@ ELEMENT_TAG=
         DIAMOND_TAG = 6,   --金币
         GOOD_TAG = 7,    --道具
         SPECIAL_TAG = 8,  --特殊钢架
+        Edge_Bottom = 9,   --下边界
     }
 
 --缓存元素类型

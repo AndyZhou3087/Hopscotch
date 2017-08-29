@@ -211,7 +211,7 @@ function LoadView:playerResFinish()
 end
 
 function LoadView:roleMove()
-    local playerY = display.bottom+390
+    local playerY = display.bottom+380
     local res = RoleConfig[1].roleImg
     local _actionName = RoleConfig[1].armatureName
     local jump = RoleConfig[1].jumpName
