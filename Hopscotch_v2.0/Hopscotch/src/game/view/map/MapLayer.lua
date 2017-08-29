@@ -77,6 +77,15 @@ function MapLayer:ctor(parameters)
     
     self.m_bg = display.newSprite("map/Scene_1/Map_frame_2.png")
     self.bottomHeight = self.m_bg:getCascadeBoundingBox().size.height
+    
+    
+    --下边界
+    self.edgeBottom = display.newNode()
+    local bottomBody = cc.PhysicsBody:createEdgeSegment(cc.p(0,0),cc.p(display.width,0),cc.PhysicsMaterial(0, 0, 0),self.bottomHeight)
+    bottomBody:setTag(ELEMENT_TAG.Edge_Bottom)
+    self.edgeBottom:setPhysicsBody(bottomBody)
+    self:addChild(self.edgeBottom)
+    
 
     --房间层
     self.m_roomNode = display.newNode()
@@ -107,8 +116,9 @@ function MapLayer:ctor(parameters)
         self.matchRole = Player.new(1)
         self:addChild(self.matchRole,MAP_ZORDER_MAX+1)
         local _size = self.matchRole:getSize()
-        self.matchRole:setPosition(cc.p(display.cx+200,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
+        self.matchRole:setPosition(cc.p(display.cx+250,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
         self.aiTime = 0.3
+        self.roomOpenMode = 0
         self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateAIJump), self.aiTime)
     end
 
@@ -116,6 +126,14 @@ function MapLayer:ctor(parameters)
     
     GameDispatcher:addListener(EventNames.EVENT_GAME_OVER,handler(self,self.playerDead))
 
+end
+
+function MapLayer:checkCloseRoom()
+	
+end
+
+function MapLayer:toMatchRoleJump(pos)
+    self.matchRole:toJump(pos)
 end
 
 --竞技模式跳跃
@@ -142,38 +160,42 @@ function MapLayer:updateAIJump()
         local roomType = _room:getCurRoomType()
         if roomType == MAPROOM_TYPE.Common or roomType == MAPROOM_TYPE.Lean then
             if _room:getRoomCloseValue() then
-                self.matchRole:toJump(pos)
+                self.roomOpenMode = OpenWallType.Close
+                self:toMatchRoleJump(pos)
                 self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
             else
                 if _room:getSingleOpenWallDir() == OpenWallType.Left then
+                    self.roomOpenMode = OpenWallType.Left
                     if bpx > pos.x + display.cx then
-                        self.matchRole:toJump(pos)
+                        self:toMatchRoleJump(pos)
                         self.aiTime = 0.6*spaceSpeed/self.matchRole:getSpeed()
                     else
                         if _scaleX == -1 then
-                            self.matchRole:toJump(pos)
+                            self:toMatchRoleJump(pos)
                             self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
                         else
-                            self.matchRole:toJump(pos)
-                            self.aiTime = 0.2*spaceSpeed/self.matchRole:getSpeed()
+                            self:toMatchRoleJump(pos)
+                            self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
                         end
                     end
                 elseif _room:getSingleOpenWallDir() == OpenWallType.Right then
+                    self.roomOpenMode = OpenWallType.Right
                     if bpx < pos.x + display.cx then
-                        self.matchRole:toJump(pos)
+                        self:toMatchRoleJump(pos)
                         self.aiTime = 0.6*spaceSpeed/self.matchRole:getSpeed()
                     else
                         if _scaleX == 1 then
-                            self.matchRole:toJump(pos)
+                            self:toMatchRoleJump(pos)
                             self.aiTime = 1*spaceSpeed/self.matchRole:getSpeed()
                         else
-                            self.matchRole:toJump(pos)
-                            self.aiTime = 0.2*spaceSpeed/self.matchRole:getSpeed()
+                            self:toMatchRoleJump(pos)
+                            self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
                         end
                     end
                 else
-                    self.matchRole:toJump(pos)
-                    self.aiTime = 0.15*spaceSpeed/self.matchRole:getSpeed()
+                    self.roomOpenMode = OpenWallType.All
+                    self:toMatchRoleJump(pos)
+                    self.aiTime = 0.08*spaceSpeed/self.matchRole:getSpeed()
                 end
             end
         elseif roomType == MAPROOM_TYPE.Special then
@@ -181,20 +203,20 @@ function MapLayer:updateAIJump()
 --            if (roomIndex+1)%10 == 1 then
 --                if right then
 --                    if _scaleX == -1 then
---                        self.matchRole:toJump()
+--                        self:toMatchRoleJump()
 --                        self.aiTime = 0.3
 --                    end
 --                elseif left then
 --                    if _scaleX == 1 then
---                        self.matchRole:toJump()
+--                        self:toMatchRoleJump()
 --                        self.aiTime = 0.3
 --                    end
 --                else
---                    self.matchRole:toJump()
+--                    self:toMatchRoleJump()
 --                    self.aiTime = 0.2
 --                end
 --            else
---                self.matchRole:toJump()
+--                self:toMatchRoleJump()
 --                self.aiTime = 100
 --            end
         end
@@ -447,7 +469,7 @@ function MapLayer:addNewRooms(parameters)
     if self.m_roomsNum % 100 == 1 then
         self.gFloor = math.random(self.m_roomsNum,self.m_roomsNum+98)
     end
-    Tools.printDebug("brj jumpHouse 随机出现火箭道具楼层：",self.gFloor)
+--    Tools.printDebug("brj jumpHouse 随机出现火箭道具楼层：",self.gFloor)
     
     if self.roomType ~= MAPROOM_TYPE.Running then
         self.floorNum = self.floorNum + 1
@@ -1493,7 +1515,7 @@ function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
     local _scaleX = self.matchRole:getScaleX()
     local playerBP=self.matchRole:getBody():getPosition()
     local obstacleBP=_body:getPosition()
-    Tools.printDebug("----------brj 竞技模式检测：111111111111111",_tag,ELEMENT_TAG.SPECIAL_TAG)
+    
     if (not _bnode) or _tag==ELEMENT_TAG.PLAYER_TAG_1 then
         return true
     end
@@ -1520,16 +1542,16 @@ function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
 --                local left,right = _room:getSpeicalSteel()
 --                if right then
 --                    if _scaleX == -1 then
---                        self.matchRole:toJump()
+--                        self:toMatchRoleJump()
 --                        self.aiTime = 0.3
 --                    end
 --                elseif left then
 --                    if _scaleX == 1 then
---                        self.matchRole:toJump()
+--                        self:toMatchRoleJump()
 --                        self.aiTime = 0.3
 --                    end
 --                else
---                    self.matchRole:toJump()
+--                    self:toMatchRoleJump()
 --                    self.aiTime = 0.2
 --                end
 --            end
@@ -1542,10 +1564,6 @@ function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
     end
 
     return true
-end
-
-function MapLayer:toMatchRoleJump(parameters)
-    self.matchRole:toJump()
 end
 
 --竞技对手左右移动，碰撞反射，从人物中心向上或向下发射一个比自身一半多 Raycast_DisY 像素的探测射线，进行检测有无障碍物
