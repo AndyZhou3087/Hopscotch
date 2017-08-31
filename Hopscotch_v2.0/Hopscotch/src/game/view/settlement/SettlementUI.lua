@@ -14,6 +14,7 @@ function SettlementUI:ctor(parameters)
 
     local bg = display.newColorLayer(cc.c4b(0,0,0,OPACITY)):addTo(self)
     
+    GameDataManager.addGamgOverCount()
     AudioManager.stopAudio(1)
 
     self.m_json = cc.uiloader:load("json/SettlementUI.json")
@@ -45,13 +46,26 @@ function SettlementUI:initAction()
         local move3 = cc.MoveBy:create(0.2,cc.p(MapSize.width,0))
         self.frame_3:runAction(move3)
     end)
---    self.handler3 = Tools.delayCallFunc(0.6,function()
---        local move4 = cc.MoveBy:create(0.2,cc.p(MapSize.width,0))
---        self.frame_4:runAction(move4)
---    end)
-    self.handler4 = Tools.delayCallFunc(0.6,function()
+    self.handler3 = Tools.delayCallFunc(0.6,function()
+        local move4 = cc.MoveBy:create(0.2,cc.p(MapSize.width,0))
+        self.frame_4:runAction(move4)
+    end)
+    self.handler4 = Tools.delayCallFunc(0.8,function()
         local move5 = cc.MoveBy:create(0.2,cc.p(0,216))
         self.bottom:runAction(move5)
+    end)
+    self.handler5 = Tools.delayCallFunc(1.2,function()
+        if GameDataManager.getGameOverCount() % AlertCommentCount == 0  then
+            Tools.printDebug("brj hopscotch 五星好评弹框",DataPersistence.getAttribute("favourableCommentAlert"))
+            if not DataPersistence.getAttribute("favourableCommentAlert") then
+                GameDispatcher:dispatch(EventNames.EVENT_OPEN_COMMENTALERT)
+--                SDKUtil.favourableCommentAlert({callback=function(_res)
+--                    if SDKUtil.PayResult.Comment == _res or SDKUtil.PayResult.Refuse == _res then
+--                        DataPersistence.updateAttribute("favourableCommentAlert",true)
+--                    end
+--                end})
+            end
+        end
     end)
 end
 
@@ -74,13 +88,16 @@ function SettlementUI:initMiddle()
     self.frame_2 = cc.uiloader:seekNodeByName(self.m_json,"frame_2")
     self.frame_3 = cc.uiloader:seekNodeByName(self.m_json,"frame_3")
     self.frame_4 = cc.uiloader:seekNodeByName(self.m_json,"frame_4")
+    self.frame_2:setPositionY(self.frame_2:getPositionY()+70)
+    self.frame_3:setPositionY(self.frame_3:getPositionY()+70)
+    self.frame_4:setPositionY(self.frame_4:getPositionY()+70)
     
     self.framebtn1 = cc.uiloader:seekNodeByName(self.m_json,"framebtn1")
     self.framebtn2 = cc.uiloader:seekNodeByName(self.m_json,"framebtn2")
     self.framebtn3 = cc.uiloader:seekNodeByName(self.m_json,"framebtn3")
     self.framebtn4 = cc.uiloader:seekNodeByName(self.m_json,"framebtn4")
     self.frame_1:setVisible(false)
-    self.frame_4:setVisible(false)
+--    self.frame_4:setVisible(false)
     
     --
     self.framebtn1:onButtonClicked(function (event)
@@ -140,6 +157,7 @@ function SettlementUI:initMiddle()
     self.framebtn4:onButtonClicked(function (event)
         AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Button_Click_Sound)
         Tools.printDebug("brj hopscotch 五星好评")
+        SDKUtil.favourableComment()
     end)
     
     self.countDown = 0
@@ -266,6 +284,10 @@ function SettlementUI:onCleanup()
     if self.handler4 then
         Scheduler.unscheduleGlobal(self.handler4)
         self.handler4 = nil
+    end
+    if self.handler5 then
+        Scheduler.unscheduleGlobal(self.handler5)
+        self.handler5 = nil
     end
     
     if self.m_Handler then
