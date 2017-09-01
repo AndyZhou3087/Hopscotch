@@ -175,23 +175,13 @@ function MapLayer:updateAIJump()
         if roomType == MAPROOM_TYPE.Common or roomType == MAPROOM_TYPE.Lean then
             if curRoom:getRoomCloseValue() then
                 self.roomOpenMode = OpenWallType.Close
---                self:toMatchRoleJump(pos)
---                if self.m_aiHandler then
---                    Scheduler.unscheduleGlobal(self.m_aiHandler)
---                    self.m_aiHandler=nil
---                end
             else
                 if curRoom:getSingleOpenWallDir() == OpenWallType.Left then
                     self.roomOpenMode = OpenWallType.Left
                     if _scaleX == -1 then
                         self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
                     else
---                        self:toMatchRoleJump(pos)
                         self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
---                        if self.m_aiHandler then
---                            Scheduler.unscheduleGlobal(self.m_aiHandler)
---                            self.m_aiHandler=nil
---                        end
                         self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
                     end
                 elseif curRoom:getSingleOpenWallDir() == OpenWallType.Right then
@@ -199,22 +189,12 @@ function MapLayer:updateAIJump()
                     if _scaleX == 1 then
                         self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
                     else
---                        self:toMatchRoleJump(pos)
                         self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
---                        if self.m_aiHandler then
---                            Scheduler.unscheduleGlobal(self.m_aiHandler)
---                            self.m_aiHandler=nil
---                        end
                         self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
                     end
                 else
                     self.roomOpenMode = OpenWallType.All
---                    self:toMatchRoleJump(pos)
                     self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
---                    if self.m_aiHandler then
---                        Scheduler.unscheduleGlobal(self.m_aiHandler)
---                        self.m_aiHandler=nil
---                    end
                     self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
                 end
             end
@@ -224,33 +204,18 @@ function MapLayer:updateAIJump()
                 if _scaleX == -1 then
                     self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
                 else
---                    self:toMatchRoleJump(pos)
                     self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
---                    if self.m_aiHandler then
---                        Scheduler.unscheduleGlobal(self.m_aiHandler)
---                        self.m_aiHandler=nil
---                    end
                     self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
                 end
             elseif left then
                 if _scaleX == 1 then
                     self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
                 else
---                    self:toMatchRoleJump(pos)
                     self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
---                    if self.m_aiHandler then
---                        Scheduler.unscheduleGlobal(self.m_aiHandler)
---                        self.m_aiHandler=nil
---                    end
                     self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
                 end
             else
---                self:toMatchRoleJump(pos)
                 self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
---                if self.m_aiHandler then
---                    Scheduler.unscheduleGlobal(self.m_aiHandler)
---                    self.m_aiHandler=nil
---                end
                 self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
             end
         end
