@@ -53,17 +53,28 @@ function MapRoom:ctor(_idx,_levelCon,_floorNum,dArr,gFloor)
     
     
 --    Tools.printDebug("--------brj 特殊钢架：",_floorNum,_idx,_levelCon.roomType == MAPROOM_TYPE.Special)
-    if _levelCon.roomType == MAPROOM_TYPE.Special and _idx == 10 then
-        local spRes = SceneConfig[GameDataManager.getFightScene()].specailRes
-        if spRes then
-            local left = display.newSprite(spRes):addTo(self)
-            local width = left:getCascadeBoundingBox().size.width
-            left:setPosition(cc.p(_levelCon.lineX[1]-width,0))
-            left:setAnchorPoint(cc.p(0,0))
-            local right = display.newSprite(spRes):addTo(self)
-            right:setScaleX(-1)
-            right:setPosition(cc.p(_levelCon.lineX[2]+width+16,0))
-            right:setAnchorPoint(cc.p(0,0))
+    if _levelCon.roomType == MAPROOM_TYPE.Special then
+        if _idx == 10 then
+            local spRes = SceneConfig[GameDataManager.getFightScene()].specailRes
+            if spRes then
+                local left = display.newSprite(spRes):addTo(self)
+                local width = left:getCascadeBoundingBox().size.width
+                left:setPosition(cc.p(_levelCon.lineX[1]-width,0))
+                left:setAnchorPoint(cc.p(0,0))
+                local right = display.newSprite(spRes):addTo(self)
+                right:setScaleX(-1)
+                right:setPosition(cc.p(_levelCon.lineX[2]+width+16,0))
+                right:setAnchorPoint(cc.p(0,0))
+            end
+        end
+        if _idx == 1 then
+            local valueL = _levelCon.left[1]
+            local valueR = _levelCon.right[1]
+            if valueL < valueR then
+            	self.steelDirLeft = true
+            else
+                self.steelDirLeft = false
+            end
         end
     end
     
@@ -426,6 +437,11 @@ end
 --获取房间开口方向
 function MapRoom:getSingleOpenWallDir()
     return self.wallDirection
+end
+
+--钢架层AI角色应该从低的一边钢架开始跳跃
+function MapRoom:getAIJumpDir()
+    return self.steelDirLeft
 end
 
 --销毁

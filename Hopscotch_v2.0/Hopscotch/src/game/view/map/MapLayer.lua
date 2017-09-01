@@ -117,9 +117,7 @@ function MapLayer:ctor(parameters)
         self:addChild(self.matchRole,MAP_ZORDER_MAX+1)
         local _size = self.matchRole:getSize()
         self.matchRole:setPosition(cc.p(display.cx+250,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
-        self.aiTime = 0.3
         self.roomOpenMode = 0
-        self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateAIJump), self.aiTime)
     end
 
     self:setCameraMask(2)
@@ -128,22 +126,17 @@ function MapLayer:ctor(parameters)
 
 end
 
-function MapLayer:checkCloseRoom()
-	
-end
-
 function MapLayer:toMatchRoleJump(pos)
     self.matchRole:toJump(pos)
 end
 
---竞技模式跳跃
-function MapLayer:updateAIJump()
+function MapLayer:updateRoleJump()
     if tolua.isnull(self.matchRole) then
         if self.m_aiHandler then
             Scheduler.unscheduleGlobal(self.m_aiHandler)
             self.m_aiHandler=nil
         end
-    	return
+        return
     end
     local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
     local pos
@@ -152,93 +145,116 @@ function MapLayer:updateAIJump()
     else
         pos = self.floorPos[roomIndex][1]
     end
-    
-    local _room = self:getRoomByIdx(roomIndex+1)
-    local curRoom = self:getRoomByIdx(roomIndex)
-    local bpx,bpy = self.matchRole:getPosition()
-    local _scaleX = self.matchRole:getScaleX()
-    if _room then
-        local roomType = _room:getCurRoomType()
-        if roomType == MAPROOM_TYPE.Common or roomType == MAPROOM_TYPE.Lean then
-            if _room:getRoomCloseValue() then
-                self.roomOpenMode = OpenWallType.Close
-                self:toMatchRoleJump(pos)
-                self.aiTime = 0.9*spaceSpeed/self.matchRole:getSpeed()
-            else
-                if _room:getSingleOpenWallDir() == OpenWallType.Left then
-                    self.roomOpenMode = OpenWallType.Left
-                    if bpx > pos.x + display.cx then
-                        self:toMatchRoleJump(pos)
-                        self.aiTime = 0.5*spaceSpeed/self.matchRole:getSpeed()
-                    else
-                        if _scaleX == -1 then
-                            self:toMatchRoleJump(pos)
-                            self.aiTime = 0.9*spaceSpeed/self.matchRole:getSpeed()
-                        else
-                            self:toMatchRoleJump(pos)
-                            self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
-                        end
-                    end
-                elseif _room:getSingleOpenWallDir() == OpenWallType.Right then
-                    self.roomOpenMode = OpenWallType.Right
-                    if bpx < pos.x + display.cx then
-                        self:toMatchRoleJump(pos)
-                        self.aiTime = 0.5*spaceSpeed/self.matchRole:getSpeed()
-                    else
-                        if _scaleX == 1 then
-                            self:toMatchRoleJump(pos)
-                            self.aiTime = 0.9*spaceSpeed/self.matchRole:getSpeed()
-                        else
-                            self:toMatchRoleJump(pos)
-                            self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
-                        end
-                    end
-                else
-                    self.roomOpenMode = OpenWallType.All
---                    if bpx <= pos.x + display.cx + 100 and bpx >= pos.x + display.cx - 100 then
-                        self:toMatchRoleJump(pos)
---                    else
---                        if curRoom:getSingleOpenWallDir() == OpenWallType.Left then
---                            if bpx > pos.x + display.cx + 100 then
---                                self:toMatchRoleJump(pos)
---                            else
---                                self.aiTime = 0.04*spaceSpeed/self.matchRole:getSpeed()
---                        	end
---                        else
---                            
---                        end
---                    end
-                    self.aiTime = 0.08*spaceSpeed/self.matchRole:getSpeed()
-                end
-            end
-        elseif roomType == MAPROOM_TYPE.Special then
---            local left,right = _room:getSpeicalSteel()
---            if (roomIndex+1)%10 == 1 then
---                if right then
---                    if _scaleX == -1 then
---                        self:toMatchRoleJump()
---                        self.aiTime = 0.3
---                    end
---                elseif left then
---                    if _scaleX == 1 then
---                        self:toMatchRoleJump()
---                        self.aiTime = 0.3
---                    end
---                else
---                    self:toMatchRoleJump()
---                    self.aiTime = 0.2
---                end
---            else
---                self:toMatchRoleJump()
---                self.aiTime = 100
---            end
-        end
+    self:toMatchRoleJump(pos)
+    if self.aiDelayHandler then
+        Scheduler.unscheduleGlobal(self.aiDelayHandler)
+        self.aiDelayHandler=nil
     end
+    self.aiDelayHandler = Tools.delayCallFunc(0.1,function()
+        self:updateAIJump()
+    end)
+end
+
+--竞技模式跳跃
+function MapLayer:updateAIJump()
     if self.m_aiHandler then
         Scheduler.unscheduleGlobal(self.m_aiHandler)
         self.m_aiHandler=nil
     end
-    self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateAIJump), self.aiTime)
+    local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
+    local pos
+    if self.floorPos[roomIndex].x then
+        pos = self.floorPos[roomIndex]
+    else
+        pos = self.floorPos[roomIndex][1]
+    end
+    local curRoom = self:getRoomByIdx(roomIndex)
+    local _scaleX = self.matchRole:getScaleX()
+    if curRoom then
+        local roomType = curRoom:getCurRoomType()
+        if roomType == MAPROOM_TYPE.Common or roomType == MAPROOM_TYPE.Lean then
+            if curRoom:getRoomCloseValue() then
+                self.roomOpenMode = OpenWallType.Close
+--                self:toMatchRoleJump(pos)
+--                if self.m_aiHandler then
+--                    Scheduler.unscheduleGlobal(self.m_aiHandler)
+--                    self.m_aiHandler=nil
+--                end
+            else
+                if curRoom:getSingleOpenWallDir() == OpenWallType.Left then
+                    self.roomOpenMode = OpenWallType.Left
+                    if _scaleX == -1 then
+                        self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                    else
+--                        self:toMatchRoleJump(pos)
+                        self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+--                        if self.m_aiHandler then
+--                            Scheduler.unscheduleGlobal(self.m_aiHandler)
+--                            self.m_aiHandler=nil
+--                        end
+                        self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
+                    end
+                elseif curRoom:getSingleOpenWallDir() == OpenWallType.Right then
+                    self.roomOpenMode = OpenWallType.Right
+                    if _scaleX == 1 then
+                        self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                    else
+--                        self:toMatchRoleJump(pos)
+                        self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+--                        if self.m_aiHandler then
+--                            Scheduler.unscheduleGlobal(self.m_aiHandler)
+--                            self.m_aiHandler=nil
+--                        end
+                        self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
+                    end
+                else
+                    self.roomOpenMode = OpenWallType.All
+--                    self:toMatchRoleJump(pos)
+                    self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+--                    if self.m_aiHandler then
+--                        Scheduler.unscheduleGlobal(self.m_aiHandler)
+--                        self.m_aiHandler=nil
+--                    end
+                    self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
+                end
+            end
+        elseif roomType == MAPROOM_TYPE.Special then
+            local left,right = curRoom:getSpeicalSteel()
+            if right then
+                if _scaleX == -1 then
+                    self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                else
+--                    self:toMatchRoleJump(pos)
+                    self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+--                    if self.m_aiHandler then
+--                        Scheduler.unscheduleGlobal(self.m_aiHandler)
+--                        self.m_aiHandler=nil
+--                    end
+                    self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
+                end
+            elseif left then
+                if _scaleX == 1 then
+                    self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                else
+--                    self:toMatchRoleJump(pos)
+                    self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+--                    if self.m_aiHandler then
+--                        Scheduler.unscheduleGlobal(self.m_aiHandler)
+--                        self.m_aiHandler=nil
+--                    end
+                    self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
+                end
+            else
+--                self:toMatchRoleJump(pos)
+                self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+--                if self.m_aiHandler then
+--                    Scheduler.unscheduleGlobal(self.m_aiHandler)
+--                    self.m_aiHandler=nil
+--                end
+                self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
+            end
+        end
+    end
 end
 
 --触摸
@@ -923,7 +939,6 @@ function MapLayer:onEnterFrame(dt)
         self.m_physicWorld:rayCast(handler(self,self.rayCastMatchFunc),cc.p(_p.x,_p.y-_size.height*0.5),cc.p(_p.x,_p.y-_size.height*0.5-Raycast_DisY))
 
         if not self.matchRole:isInState(PLAYER_STATE.Rocket) and not self.matchRole:isInState(PLAYER_STATE.StartRocket) then
---            Tools.printDebug("----------brj 竞技模式射线检测2222222222：",_p.x+_add*(_size.width*0.5+Raycast_DisX),762.5)
             self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y))
         end
 
@@ -1534,6 +1549,7 @@ function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
     end
     
     if _tag==ELEMENT_TAG.WALLLEFT or _tag==ELEMENT_TAG.WALLRIGHT or _tag==ELEMENT_TAG.SPECIAL_TAG then
+        Tools.printDebug("----------brj 竞技模式射线检测2222222222：",_tag)
         if not tolua.isnull(_bnode) then
             local vel=self.matchRole:getBody():getVelocity()
             local _size = self.matchRole:getSize()
@@ -1549,31 +1565,104 @@ function MapLayer:rayCastFuncMatchX(_world,_p1,_p2,_p3)
             if not tolua.isnull(_bnode) then
                 _bnode:collision()
             end
---            local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
---            local _room = self:getRoomByIdx(roomIndex+1)
---            if _room then
---                local left,right = _room:getSpeicalSteel()
---                if right then
---                    if _scaleX == -1 then
---                        self:toMatchRoleJump()
---                        self.aiTime = 0.3
---                    end
---                elseif left then
---                    if _scaleX == 1 then
---                        self:toMatchRoleJump()
---                        self.aiTime = 0.3
---                    end
---                else
---                    self:toMatchRoleJump()
---                    self.aiTime = 0.2
---                end
---            end
---            if self.m_aiHandler then
---                Scheduler.unscheduleGlobal(self.m_aiHandler)
---                self.m_aiHandler=nil
---            end
---            self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateAIJump), self.aiTime)
         end
+        local _scaleX = self.matchRole:getScaleX()
+        local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
+        local _room = self:getRoomByIdx(roomIndex+1)
+        if _room then
+            local _roomType = _room:getCurRoomType()
+            local _roomMode = _room:getSingleOpenWallDir()
+            local _roomSpeAIDir = _room:getAIJumpDir()
+            local _roomKey = _room:getRoomKey()
+            if _roomType == MAPROOM_TYPE.Common or _roomType == MAPROOM_TYPE.Lean then
+                if _roomMode == OpenWallType.Close then
+                    self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                    if roomIndex == 1 then
+                        local pos
+                        if self.floorPos[roomIndex].x then
+                            pos = self.floorPos[roomIndex]
+                        else
+                            pos = self.floorPos[roomIndex][1]
+                        end
+                        self:toMatchRoleJump(pos)
+                    end
+                elseif _roomMode == OpenWallType.Left then
+                    if _scaleX == -1 then
+                        self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                    else
+                        self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                    end
+                elseif _roomMode == OpenWallType.Right then
+                    if _scaleX == 1 then
+                        self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                    else
+                        self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                    end
+                else
+                    self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+            	end
+            elseif _roomType == MAPROOM_TYPE.Special then
+                local left,right = _room:getSpeicalSteel()
+                if _roomKey == 1 then
+                    if _roomSpeAIDir and _tag==ELEMENT_TAG.WALLRIGHT then
+                        if right then
+                            if _scaleX == -1 then
+                                self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                            else
+                                self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                            end
+                        elseif left then
+                            if _scaleX == 1 then
+                                self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                            else
+                                self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                            end
+                        else
+                            self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                        end
+                    elseif not _roomSpeAIDir and _tag==ELEMENT_TAG.WALLLEFT then
+                        if right then
+                            if _scaleX == -1 then
+                                self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                            else
+                                self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                            end
+                        elseif left then
+                            if _scaleX == 1 then
+                                self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                            else
+                                self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                            end
+                        else
+                            self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                        end
+                    else
+                        self.aiTime = 10000
+                    end
+                else
+                    if right then
+                        if _scaleX == -1 then
+                            self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                        else
+                            self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                        end
+                    elseif left then
+                        if _scaleX == 1 then
+                            self.aiTime = 0.3*spaceSpeed/self.matchRole:getSpeed()
+                        else
+                            self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                        end
+                    else
+                        self.aiTime = 0.1*spaceSpeed/self.matchRole:getSpeed()
+                    end
+                end
+            end
+        end
+        if self.m_aiHandler then
+            Scheduler.unscheduleGlobal(self.m_aiHandler)
+            self.m_aiHandler=nil
+        end
+        self.m_aiHandler = Scheduler.scheduleGlobal(handler(self,self.updateRoleJump), self.aiTime)
     end
 
     return true
@@ -2364,6 +2453,11 @@ function MapLayer:dispose(parameters)
     if self.m_aiHandler then
         Scheduler.unscheduleGlobal(self.m_aiHandler)
         self.m_aiHandler=nil
+    end
+    
+    if self.aiDelayHandler then
+        Scheduler.unscheduleGlobal(self.aiDelayHandler)
+        self.aiDelayHandler=nil
     end
     
     GameDataManager.resetRevive()
