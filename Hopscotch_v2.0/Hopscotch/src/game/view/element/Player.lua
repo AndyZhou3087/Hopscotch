@@ -376,6 +376,7 @@ function Player:springRocket(parameters)
     local camera,floorPos,curFloor,dis,curRoomKey
     if not tolua.isnull(self:getParent()) then
         camera,floorPos,curFloor,dis,curRoomKey = self:getParent():getRocketData()
+        self:getParent():toStopMatchRoleJump()
     end
     local curCloseFloor = math.ceil(curFloor/10)*10
     local roomNextType = self:getParent():getRoomByIdx(curCloseFloor+1):getCurRoomType()
@@ -408,6 +409,8 @@ function Player:springRocket(parameters)
         local callfun = cc.CallFunc:create(function()
             self:setPosition(cc.p(nextCloseFloorX+display.cx,nextCloseFloorY+self.m_size.height*0.5+30))
             self:toStopRocket()
+            local pos = floorPos[curCloseFloor+10]
+            self:getParent():toStartMatchRoleJump(pos)
         end)
         local seq = cc.Sequence:create(move,callfun)
         self:runAction(seq)
@@ -436,6 +439,8 @@ function Player:springRocket(parameters)
         local callfun = cc.CallFunc:create(function()
             self:setPosition(cc.p(nextCloseFloorX+display.cx,nextCloseFloorY+self.m_size.height*0.5+30))
             self:toStopRocket()
+            local pos = floorPos[curCloseFloor+10]
+            self:getParent():toStartMatchRoleJump(pos)
         end)
         local seq = cc.Sequence:create(move,move2,callfun)
         self:runAction(seq)
@@ -463,6 +468,8 @@ function Player:springRocket(parameters)
         local callfun = cc.CallFunc:create(function()
             self:setPosition(cc.p(floorPos[curCloseFloor+10].x+display.cx,floorPos[curCloseFloor+10].y+self.m_size.height*0.5+30))
             self:toStopRocket()
+            local pos = floorPos[curCloseFloor+10]
+            self:getParent():toStartMatchRoleJump(pos)
         end)
         local seq = cc.Sequence:create(move,move2,callfun)
         self:runAction(seq)
@@ -581,6 +588,9 @@ function Player:selfDead(isTimeOver)
             self.m_armature:stopAllActions()
             
             if GameDataManager.getRevive() then
+                if not tolua.isnull(self:getParent()) then
+                    self:getParent():matchRoleDead()
+                end
                 --弹结算
                 GameDispatcher:dispatch(EventNames.EVENT_OPEN_SETTLEMENT)
             else
@@ -739,6 +749,15 @@ function Player:getActionVisible()
     return self.m_armature:isVisible()
 end
 
+function Player:setSpeed(_speed)
+	self.m_speed = _speed
+end
+
+--获取角色速度
+function Player:getSpeed()
+    return self.m_speed
+end
+
 --判断角色是否死亡
 function Player:isDead()
 --    Tools.printDebug("-------------------角色死亡：",self.m_vo.m_lifeNum)
@@ -748,11 +767,6 @@ end
 --获取角色大小
 function Player:getSize()
     return self.m_size
-end
-
---获取角色速度
-function Player:getSpeed()
-    return self.m_speed
 end
 
 --获取跳跃值

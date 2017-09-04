@@ -115,6 +115,7 @@ function MapLayer:ctor(parameters)
     if GAME_CONTROL == Game_Mode.Athletics then
         self.matchRole = Player.new(1)
         self:addChild(self.matchRole,MAP_ZORDER_MAX+1)
+        GameController.setMatchPlayer(self.matchRole)
         local _size = self.matchRole:getSize()
         self.matchRole:setPosition(cc.p(display.cx+250,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
         self.roomOpenMode = 0
@@ -885,8 +886,21 @@ function MapLayer:onEnterFrame(dt)
     --移动金币
     GameController.attract()
     
+    if tolua.isnull(self.m_player) then
+        return
+    end
+
+    if tolua.isnull(self.m_player.m_body) then
+        return
+    end
+
+    if self.m_player:isDead() then
+        return
+    end
+    
     --========================--竞技模式=================================
     if not tolua.isnull(self.matchRole) then
+        local bx,by = self.m_player:getPosition()
         local bpx,bpy = self.matchRole:getPosition()
         self.matchRole:update(dt,bpx,bpy)
 
@@ -908,8 +922,16 @@ function MapLayer:onEnterFrame(dt)
         end
 
         local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
-        local pos = self.floorPos[roomIndex] 
-        if bpx <= pos.x-_size.width*0.5 then
+        local m_pos = self.floorPos[roomIndex+5]
+        Tools.printDebug("-----------------brj Hopscotch 竞技角色坐标：",roomIndex)
+        if bpy <= by-Room_Size.height*10 then
+            self.matchRole:setPosition(cc.p(m_pos.x+display.cx,m_pos.y+_size.height*0.5+self.matchRole:getErrorValue()))
+        end
+        
+        local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
+        Tools.printDebug("-----------------brj Hopscotch 竞技角色坐标2222222222：",roomIndex)
+        local pos = self.floorPos[roomIndex]
+        if bpx <= pos.x+_size.width*0.5 then
             if self.matchRole then
                 self.matchRole:dispose()
             end
@@ -918,7 +940,7 @@ function MapLayer:onEnterFrame(dt)
                 self.m_aiHandler=nil
             end
         end
-        if bpx >= pos.x+display.right+_size.width*0.5 then
+        if bpx >= pos.x+display.right-_size.width*0.5 then
             if self.matchRole then
                 self.matchRole:dispose()
             end
@@ -930,18 +952,6 @@ function MapLayer:onEnterFrame(dt)
     end
     
 --===============================普通模式===================================
-    if tolua.isnull(self.m_player) then
-        return
-    end
-
-    if tolua.isnull(self.m_player.m_body) then
-        return
-    end
-
-    if self.m_player:isDead() then
-        return
-    end
-    
 
     local bpx,bpy = self.m_player:getPosition()
     local _size = self.m_player:getSize()
@@ -985,6 +995,11 @@ function MapLayer:onEnterFrame(dt)
         end
         if bpy < pos.y-Room_Size.height*2 then
             self:playerDead()
+        end
+        if not tolua.isnull(self.matchRole) then
+            if self.matchRole:getPositionY()>=bpy+Room_Size.height*10 then
+                self:playerDead()
+        	end
         end
     end
     
@@ -1781,6 +1796,11 @@ function MapLayer:playerDead(parm)
     
 end
 
+--竞技角色死亡
+function MapLayer:matchRoleDead()
+    self:toStopMatchRoleJump()
+end
+
 --双向横跑时根据编号从右边缓存中取出房间
 function MapLayer:getRightRoomByIdx(_roomIndx)
     for key, var in pairs(self.m_bothRightRooms) do
@@ -2262,6 +2282,10 @@ function MapLayer:backOriginFunc()
     self.m_player:toStopJump()
     self.m_player:addLifeNum(1)
     self.m_player:setPosition(cc.p(display.cx,floorPos.y+_size.height*0.5+self.m_player:getErrorValue()))
+    if self.matchRole then
+        self.matchRole:setPosition(cc.p(display.cx,floorPos.y+_size.height*0.5+self.matchRole:getErrorValue()))
+    end
+    
     --清除所有角色buff
     self.m_player:clearAllBuff()
     
@@ -2295,6 +2319,7 @@ function MapLayer:toStartRocket(_floor)
     self.rocketFloor = _floor
     Tools.printDebug("---------------------brj hoshos 随机层数：",_floor)
     self.runFloorNum = self.runFloorNum + _floor
+    self:toStopMatchRoleJump()
 end
 
 function MapLayer:toStopStartRocket()
@@ -2303,8 +2328,37 @@ function MapLayer:toStopStartRocket()
     self.m_player:setPosition(cc.p(pos.x+display.cx,pos.y+_size.height*0.5+self.m_player:getErrorValue()))
     self.m_player:toStopStartRocket()
 --    self.m_camera:setPosition(cc.p(pos.x,pos.y-self.bottomHeight))
+    self:toStartMatchRoleJump(pos)
 end
 
+--暂停竞技角色跳跃
+function MapLayer:toStopMatchRoleJump()
+    if self.m_aiHandler then
+        Scheduler.unscheduleGlobal(self.m_aiHandler)
+        self.m_aiHandler=nil
+    end
+
+    if self.aiDelayHandler then
+        Scheduler.unscheduleGlobal(self.aiDelayHandler)
+        self.aiDelayHandler=nil
+    end
+
+    if self.matchSpeed then
+        self.matchSpeed = self.matchRole:getSpeed()
+        self.matchRole:setSpeed(0)
+    end
+end
+
+--开启竞技角色跳跃
+function MapLayer:toStartMatchRoleJump(pos)
+    if self.matchRole then
+        local _size = self.matchRole:getSize()
+        self.matchRole:setPosition(cc.p(pos.x+display.cx,pos.y+_size.height*0.5+self.matchRole:getErrorValue()))
+        if self.matchSpeed then
+            self.matchRole:setSpeed(self.matchSpeed)
+        end
+    end
+end
 
 --销毁特殊刚体
 function MapLayer:disposeSpecial(_typeNum)

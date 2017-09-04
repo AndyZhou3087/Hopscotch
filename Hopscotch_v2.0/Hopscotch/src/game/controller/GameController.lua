@@ -30,6 +30,8 @@ local rooms
 
 --当前角色对象
 local curPlayer
+--可能存在的竞技角色对象
+local matchRole
 
 --用于刚进入战斗场景时碰撞拦截
 local _canCollision = true
@@ -136,6 +138,22 @@ end
 function GameController.isInState(_state)
     if not tolua.isnull(curPlayer) then
         return curPlayer:isInState(_state)
+    end
+    return false
+end
+
+--设置竞技玩家对象
+function GameController.setMatchPlayer(_player)
+    matchRole = _player
+end
+--获取竞技角色对象
+function GameController.getMatchPlayer()
+    return matchRole
+end
+--玩家是否处于某种状态
+function GameController.isMatchInState(_state)
+    if not tolua.isnull(matchRole) then
+        return matchRole:isInState(_state)
     end
     return false
 end
@@ -311,6 +329,19 @@ function GameController.attract(parameters)
                 local goldRect = cc.rect(goldPos.x,goldPos.y,goldSize.width,goldSize.height)
                 if cc.rectIntersectsRect(goldRect,playerRect) then
                     gold:collision()
+                    table.remove(goldBody,var)
+                end
+            end
+            if not tolua.isnull(matchRole) then
+                local parent=matchRole:getParent()
+                local playP = cc.p(matchRole:getPosition())
+                local playSize = matchRole:getSize()
+                local goldPos=cc.p(gold:getPosition())
+                local goldSize = gold:getSize()
+                local playerRect = cc.rect(playP.x-playSize.width*0.5,playP.y-playSize.height*0.5,playSize.width,playSize.height)
+                local goldRect = cc.rect(goldPos.x,goldPos.y,goldSize.width,goldSize.height)
+                if cc.rectIntersectsRect(goldRect,playerRect) then
+                    gold:collision(true)
                     table.remove(goldBody,var)
                 end
             end

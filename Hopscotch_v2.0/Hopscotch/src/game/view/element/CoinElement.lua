@@ -4,7 +4,8 @@
 local BaseElement = require("game.view.element.BaseElement")
 local CoinElement=class("CoinElement",BaseElement)
 
-local PhysicSprite=require("game.custom.PhysicSprite")  
+local PhysicSprite=require("game.custom.PhysicSprite")
+local Special_MATERIAL=cc.PhysicsMaterial(0,0,0)
 
 function CoinElement:ctor(parm)
     CoinElement.super.ctor(self)
@@ -13,8 +14,20 @@ function CoinElement:ctor(parm)
     self.m_img:setAnchorPoint(cc.p(0,0))
     self.m_size = self.m_img:getCascadeBoundingBox().size
 
+--    self:addBody(cc.p(0,0))
+
     self.m_isAttract=false   --是否被吸引
     self.m_group = 0
+end
+
+function CoinElement:addBody(_offset)
+    self.m_body=cc.PhysicsBody:createBox(self.m_size,Special_MATERIAL,_offset)
+    self.m_body:setCategoryBitmask(0x01)
+    self.m_body:setContactTestBitmask(0x1111)
+    self.m_body:setCollisionBitmask(0x03)
+    self.m_body:setDynamic(false)
+    self.m_body:setTag(ELEMENT_TAG.DIAMOND_TAG)
+    self:setPhysicsBody(self.m_body)
 end
 
 function CoinElement:getSize()
@@ -22,8 +35,13 @@ function CoinElement:getSize()
 end
 
 --被碰触
-function CoinElement:collision()
+function CoinElement:collision(_isMatch)
     AudioManager.playSoundEffect(AudioManager.Sound_Effect_Type.Diamond_Sound)
+    if _isMatch then
+        self:dispose()
+        return
+    end
+    
     GameDataManager.addDiamond(1)
     GameDataManager.addGameDiamond(1)
     
