@@ -921,15 +921,16 @@ function MapLayer:onEnterFrame(dt)
             self.m_physicWorld:rayCast(handler(self,self.rayCastFuncMatchX),cc.p(_p.x,_p.y),cc.p(_p.x+_add*(_size.width*0.5+Raycast_DisX),_p.y))
         end
 
-        local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
-        local m_pos = self.floorPos[roomIndex+5]
-        Tools.printDebug("-----------------brj Hopscotch 竞技角色坐标：",roomIndex)
-        if bpy <= by-Room_Size.height*10 then
-            self.matchRole:setPosition(cc.p(m_pos.x+display.cx,m_pos.y+_size.height*0.5+self.matchRole:getErrorValue()))
+        local roomIndex = math.ceil((self.m_player:getPositionY()-self.bottomHeight)/Room_Size.height)
+        local m_pos = self.floorPos[roomIndex]
+--        Tools.printDebug("-----------------brj Hopscotch 竞技角色坐标：",bpy,by-Room_Size.height*10)
+        if bpy <= by-Room_Size.height*5 then
+            self.matchRole:setPosition(cc.p(m_pos.x+display.cx,by))
+--            Tools.printDebug("~~~~~~~~~~~~~~~==!111111111111111111111111111111111111")
         end
         
         local roomIndex = math.ceil((self.matchRole:getPositionY()-self.bottomHeight)/Room_Size.height)
-        Tools.printDebug("-----------------brj Hopscotch 竞技角色坐标2222222222：",roomIndex)
+--        Tools.printDebug("-----------------brj Hopscotch 竞技角色坐标2222222222：",roomIndex,self.matchRole:getPositionY())
         local pos = self.floorPos[roomIndex]
         if bpx <= pos.x+_size.width*0.5 then
             if self.matchRole then
