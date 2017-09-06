@@ -254,8 +254,9 @@ function MapRoom:initDiamonds(diamondCon,isShow)
                     diamond:retain()
                 end
                 local dismondSize = diamond:getCascadeBoundingBox().size
-                local x = math.random(self.firstX+50+dismondSize.width,self.lastX+self.lastWidth-50-dismondSize.width)
---                Tools.printDebug("-------brj 房间钻石x坐标：",x)
+--                Tools.printDebug("-------brj 房间钻石x坐标：",self.firstX+dismondSize.width*0.5,self.lastX+self.lastWidth-dismondSize.width*0.5)
+--                Tools.printDebug("-------brj ----------房间钻石x坐标：",self.firstX+50+dismondSize.width,self.lastX+self.lastWidth-50-dismondSize.width)
+                local x = math.random(self.firstX+dismondSize.width*0.5,self.lastX+self.lastWidth-dismondSize.width*0.5)
                 diamond:setPosition(x,_diamondObj.y)
                 diamond:setGroup(self.m_floorNum)
                 diamond:setAnchorPoint(cc.p(0,0))
@@ -282,7 +283,7 @@ function MapRoom:initGoods(goodCon,isShow)
         local id = 5
         local good=GoodsElement.new(id):addTo(self)
         local goodSize = good:getCascadeBoundingBox().size
-        local x = math.random(self.firstX+50+goodSize.width,self.lastX+self.lastWidth-50-goodSize.width)
+        local x = math.random(self.firstX+goodSize.width*0.5,self.lastX+self.lastWidth-goodSize.width*0.5)
         good:setPosition(x+goodSize.width*0.5,20+goodSize.height*0.5)
         table.insert(self.m_goods,good)
         table.insert(self.m_blocks,good)
